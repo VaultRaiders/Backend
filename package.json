@@ -1,0 +1,51 @@
+{
+  "name": "vault-raider-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "node dist/src/index.js",
+    "dev": "nodemon"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.30.1",
+    "@electric-sql/pglite": "^0.2.12",
+    "@pontem/liquidswap-sdk": "^0.7.3",
+    "@solana/web3.js": "^1.95.4",
+    "@telegram-apps/init-data-node": "^1.1.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "drizzle-kit": "^0.28.0",
+    "drizzle-orm": "^0.36.1",
+    "ethers": "^6.13.4",
+    "express": "^4.21.1",
+    "ioredis": "^5.4.1",
+    "moment": "^2.30.1",
+    "nodemon": "^3.1.7",
+    "novita-sdk": "^1.0.10",
+    "openai": "^4.71.1",
+    "pg": "^8.13.1",
+    "pino": "^9.5.0",
+    "pino-http": "^10.3.0",
+    "pino-pretty": "^13.0.0",
+    "punycode": "^2.3.1",
+    "redlock": "^5.0.0-beta.2",
+    "telegraf": "^4.16.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bs58": "^4.0.4",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.9.0",
+    "@types/on-finished": "^2.3.4",
+    "@types/pg": "^8.11.10"
+  }
+}

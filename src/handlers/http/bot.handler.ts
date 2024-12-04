@@ -1,0 +1,101 @@
+import { Router } from 'express';
+import { Request, Response } from 'express';
+import { BotService } from '../../services/bot.service';
+import { validate } from './middleware/validate.middleware';
+import { getListBotsSchema, getBotSchema, createBotSchema, generateBotDataFromIdeaSchema } from '../../types/validations/bot.validation';
+import { asyncHandler } from './middleware/error.middleware';
+import { sendAccepted, sendPaginated, sendSuccess } from '../../util/response';
+import { UnauthorizedError } from '../../types/errors';
+import { AuthenticatedRequest, protectedMiddleware } from './middleware/telegram.middleware';
+import { UserService } from '../../services/user.service';
+
+export class BotRouter {
+  private router: Router;
+  private controller: BotController;
+
+  constructor() {
+    this.router = Router();
+    this.controller = new BotController();
+    this.initializeRoutes();
+  }
+
+  private initializeRoutes(): void {
+    this.router.get('/', validate(getListBotsSchema), asyncHandler(this.controller.getListBots));
+    this.router.get('/me/list', protectedMiddleware(), asyncHandler(this.controller.getMyBots));
+    this.router.get('/recent', protectedMiddleware(), asyncHandler(this.controller.getRecentBots));
+    this.router.get('/:id', validate(getBotSchema), asyncHandler(this.controller.getBot));
+
+    this.router.post('/', validate(createBotSchema), protectedMiddleware(), asyncHandler(this.controller.createBot));
+    this.router.post('/:id/start', protectedMiddleware(), asyncHandler(this.controller.startChat));
+  }
+
+  public getRouter(): Router {
+    return this.router;
+  }
+}
+
+export class BotController {
+  private botService = BotService.getInstance();
+  private userService = UserService.getInstance();
+
+  constructor() {}
+
+  public getListBots = async (req: Request, res: Response): Promise<void> => {
+    const limit = Number(req.query.limit) || 20;
+    const page = Number(req.query.page) || 1;
+
+    const { bots, total } = await this.botService.getListBots(limit, page);
+    sendPaginated(res, bots, page, limit, total);
+  };
+
+  public getBot = async (req: Request, res: Response): Promise<void> => {
+    const botId = req.params.id;
+    const bot = await this.botService.getBot(botId);
+
+    sendSuccess(res, bot);
+  };
+
+  public getMyBots = async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    const telegramUser = authReq.telegramUser!;
+
+    const bots = await this.botService.getMyBots(String(telegramUser.id));
+    sendSuccess(res, bots);
+  };
+
+  public getRecentBots = async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    const telegramUser = authReq.telegramUser!;
+
+    const bots = await this.botService.getRecentBots(String(telegramUser.id));
+    sendSuccess(res, bots);
+  };
+
+  public createBot = async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    const telegramUser = authReq.telegramUser!;
+
+    const body = req.body;
+    const password = body.password;
+    delete body.password;
+
+    const bot = await this.botService.createBot(telegramUser.id, req.body, password);
+
+    sendSuccess(res, bot);
+  };
+
+  public startChat = async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    const telegramUser = authReq.telegramUser!;
+
+    const botId = req.params.id;
+
+    const user = await this.userService.getUserById(telegramUser.id);
+    const bot = await this.botService.getBot(botId);
+
+    await this.userService.updateCurrentBot(user.id, bot.id);
+    this.botService.sendBotGreeting(user, bot);
+
+    sendAccepted(res, {});
+  };
+}
