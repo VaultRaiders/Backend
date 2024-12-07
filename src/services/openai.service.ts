@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { OPENAI_API_KEY } from '../config';
 import { RunnableToolFunction } from 'openai/lib/RunnableFunction';
 import { ChatCompletionRunner } from 'openai/lib/ChatCompletionRunner';
+import { ChatCompletionStreamingRunner } from 'openai/lib/ChatCompletionStreamingRunner';
 
 
 const tools : RunnableToolFunction<any>[] = [
@@ -72,11 +73,13 @@ export class OpenAIService {
     });
   }
   // new
-  async  sendMessageWithChatComplele(messages: any) : Promise<ChatCompletionRunner>{
+  async  sendMessageWithChatComplele(messages: any): Promise<ChatCompletionStreamingRunner>{
     const runner =  this.openai.beta.chat.completions.runTools({
-      model: 'gpt-4o-mini-2024-07-18',
+      model: 'gpt-4o-mini',
       messages,
       tools,
+      stream: true,
+      store: true
     })
     return runner
   }

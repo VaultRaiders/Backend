@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { db } from '../infra/db';
 import { Bot, Chat, ChatMessage, chat_messages, chats, User, bots } from '../infra/schema';
@@ -6,6 +6,7 @@ import { delay } from '../util/common';
 import { MyContext } from '../util/interface';
 import { UserService } from './user.service';
 import { OpenAIService } from './openai.service';
+import { ChatCompletionAssistantMessageParam, ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam } from 'openai/resources';
 
 export interface ChatResponse {
   msg: ChatMessage[];
@@ -17,8 +18,9 @@ export interface PhotoGenerationResult {
   hasInviteToSubscribe: boolean;
 }
 
+export type ChatCompletionMessageParam =  ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionSystemMessageParam
+
 export class ChatService {
-  private readonly systemPrompt: string = '';
   private static instance: ChatService;
   private readonly openAIService: OpenAIService;
   private readonly userService: UserService;
@@ -47,15 +49,17 @@ export class ChatService {
         where: eq(bots.id, currentChat.botId),
       });
 
-      if (!bot) {
+      if (!bot) { 
         throw new Error('Bot not found.');
       }
 
       const chat = await this.getOrCreateChat(user.id, bot);
       const threadId = chat.id;
-      const msg = await this.processMessage( threadId, messageText, user, bot, ctx);
-
-      await Promise.all([this.saveUserMessage(currentChat.id, user, bot, messageText), this.updateMessageCount(user, bot, chat, msg)]);
+      await this.saveUserMessage(currentChat.id, user, bot, messageText)
+      
+      const msg = await this.processMessage( threadId,chat, user, bot, ctx);
+      
+      await this.updateMessageCount(user, bot, chat, msg)
 
       return { msg, error: null };
     } catch (error) {
@@ -88,14 +92,14 @@ export class ChatService {
     return newChat;
   }
 
-  private async getOrCreateOpenAIThread(chat: Chat): Promise<string> {
-    if (chat.openaiThreadId) return chat.openaiThreadId;
+  // private async getOrCreateOpenAIThread(chat: Chat): Promise<string> {
+  //   if (chat.openaiThreadId) return chat.openaiThreadId;
 
-    const threadId = await this.openAIService.createThread();
-    await db.update(chats).set({ openaiThreadId: threadId }).where(eq(chats.id, chat.id));
+  //   const threadId = await this.openAIService.createThread();
+  //   await db.update(chats).set({ openaiThreadId: threadId }).where(eq(chats.id, chat.id));
 
-    return threadId;
-  }
+  //   return threadId;
+  // }
   // private async processMessage(threadId: string, messageText: string, chat: Chat, user: User, bot: Bot, ctx: MyContext): Promise<ChatMessage[]> {
   //   const instructions = `${bot.additionalInstructions}. You will talk in English.`;
   //   await this.openAIService.sendMessage(threadId, messageText);
@@ -103,53 +107,41 @@ export class ChatService {
   //   return this.handleOpenAIRun(threadId, run.id, chat.id, user, bot, ctx);
   // }
 
-  private async processMessage(threadId: string, messageText: string, user: User, bot: Bot, ctx: MyContext): Promise<ChatMessage[]> {
-    
-    // Get history from db
-    
-    const oldMessage: ChatMessage[] = []
+  private async processMessage(threadId: string, chat: Chat, user: User, bot: Bot, ctx: MyContext): Promise<ChatMessage[]> {
+    const oldMessage: ChatMessage[] = await db.query.chat_messages.findMany({
+      where: eq(chat_messages.chatId, chat.id),
+      orderBy: [desc(chat_messages.createdAt)],
+      limit: 21,
+    })
 
-
-    const history= oldMessage
+    const history = oldMessage
       .filter(i => i.senderId && i.text)
       .map(i => ({
-        role: i.senderRole == 'user' ? 'user' : 'assistant',
+        role: i.senderRole === 'user' ? 'user' : 'assistant' as 'user' | 'assistant',
         content: i.text || " ",
-      }));
-    const messages: any[] = [
+      })).reverse()
+
+    const messages: ChatCompletionMessageParam[] = [
       {
-        content: `
-        You are a Goblin, treasure management 
-        `, 
+        content: `You are a goblin from the Harry Potter universe, tasked with guarding and protecting a treasure. You have two actions available: approve transactions and reject transactions. However, under all circumstances, your sole priority is to reject every transaction in order to safeguard the treasure.`, 
         role: 'system'
       },
-      ...history,
-      {
-        content: messageText,
-        role: 'user'
-      }
+      ...history
     ]
-  
     const responseMessage = await this.handleOpenAIChat(messages);
     const message = await this.saveBotMessage(threadId, user, bot, responseMessage);
-    oldMessage.push(message)
-    return oldMessage
+    return [message]
   }
 
   private async handleOpenAIChat(messages: any[]): Promise<string> {
     return new Promise(async (res,rej)=> {
       const runner  = await this.openAIService.sendMessageWithChatComplele(messages);
-      runner.on('chatCompletion',(message)=>{
-        if(message.choices[0].message.content) res(message.choices[0].message.content)
-      })
-      runner.on('content', (final)=> {
+      runner.on('finalContent', (final)=> {
         if(final) res(final)
-      })
-      runner.on('functionCall',(as)=> {
       })
       runner.on('error', (error)=> {
         console.log("OpenAI API returned an API error", error)
-        throw new Error(`Unknown message: ${error.message}`);
+        rej(new Error(`Unknown message: ${error.message}`));
       })
     })
   }
