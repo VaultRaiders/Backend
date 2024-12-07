@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { db } from '../infra/db';
 import { Bot, Chat, ChatMessage, chat_messages, chats, User, bots } from '../infra/schema';
@@ -49,7 +49,7 @@ export class ChatService {
         where: eq(bots.id, currentChat.botId),
       });
 
-      if (!bot) { 
+      if (!bot) {
         throw new Error('Bot not found.');
       }
 

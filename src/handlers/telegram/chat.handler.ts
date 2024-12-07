@@ -27,8 +27,6 @@ export class ChatHandler extends BaseHandler {
       await ctx.reply(systemMessage(ErrorMessages.profileMixup));
       return;
     }
-    //TODO: Remove them later
-    user.currentBotId = 'dc4adc09-6249-4469-b758-eede248c88ca'
 
     if (!user.currentBotId) {
       await ctx.reply(systemMessage(BotMessages.noBotSelected), createOpenAppKeyboard());
@@ -60,7 +58,6 @@ export class ChatHandler extends BaseHandler {
 
     try {
       const sub = await this.botService.getSubscription(chat.botId, chat.userId);
-      console.log("sub",sub)
       if (!sub) {
         await ctx.reply(systemMessage(ChatMessages.subscriptionRequired(bot.displayName)), {
           parse_mode: 'HTML',
