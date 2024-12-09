@@ -58,7 +58,6 @@ export class ChatHandler extends BaseHandler {
 
     try {
       const sub = await this.botService.getSubscription(chat.botId, chat.userId);
-
       if (!sub) {
         await ctx.reply(systemMessage(ChatMessages.subscriptionRequired(bot.displayName)), {
           parse_mode: 'HTML',
