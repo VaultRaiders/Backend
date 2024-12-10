@@ -77,6 +77,8 @@ export const subscriptions = pgTable('subscriptions', {
   userId: varchar('user_id').notNull(),
   botId: varchar('bot_id').notNull(),
   expiresAt: timestamp('expires_at').notNull(),
+  expiredAt: timestamp('expired_at'),
+  createdAt: timestamp('created_at').notNull().default(sql`now()`),
 });
 
 // Types

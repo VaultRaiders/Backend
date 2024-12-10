@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { OPENAI_API_KEY } from '../config';
 import { RunnableToolFunction } from 'openai/lib/RunnableFunction';
 import { ChatCompletionRunner } from 'openai/lib/ChatCompletionRunner';
+
 import { ChatCompletionStreamingRunner } from 'openai/lib/ChatCompletionStreamingRunner';
 
 
