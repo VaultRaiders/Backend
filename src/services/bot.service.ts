@@ -1,13 +1,13 @@
 import { AnchorProvider, BN, Program, Wallet } from '@coral-xyz/anchor';
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram } from '@solana/web3.js';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, sql, isNull, cosineDistance } from 'drizzle-orm';
 import { asc, desc, inArray } from 'drizzle-orm/expressions';
 import { randomUUID } from 'node:crypto';
 import OpenAI from 'openai';
 import { FACTORY_ADDRESS, OPENAI_API_KEY } from '../config';
 import { MAX_SUPPLY, PRICE_DECIMALS, PRICE_DENOMINATOR, REDIS_TTL, SUBSCRIPTION_DURATION } from '../constant';
 import { db } from '../infra/db';
-import { Bot, bots, Chat, chats, subscriptions, User, users } from '../infra/schema';
+import { Bot, bots, Chat, chats, subscriptions, User, users, Subscription } from '../infra/schema';
 import { botMessage, hintMessage } from '../util/common';
 import { ICreateBotData, IProccessedBotData } from '../util/interface';
 import { getHolderPDA } from '../util/pda';
@@ -20,6 +20,7 @@ import { Telegram } from '../infra/telegram';
 import { BotMessages } from '../components/messages/bot.messages';
 import { UserService } from './user.service';
 import { ZeroAddress } from 'ethers';
+import { QueryResult } from 'pg';
 
 export class BotService {
   private static instance: BotService;
@@ -181,6 +182,36 @@ export class BotService {
     return bot;
   }
 
+  // async buyTicket(botId: string, userId: string, password: string): Promise<string> {
+  //   try {
+  //     const bot = await db.query.bots.findFirst({
+  //       where: eq(bots.id, botId),
+  //     });
+
+  //     if (!bot?.address) {
+  //       throw new Error('Bot not found');
+  //     }
+
+  //     const wallet = await this.walletService.getWallet(userId, password);
+  //     // const signature = await this.executeBuyTicket(bot.address, wallet);
+
+  //     await this.updateSubscription(userId, botId);
+
+  //     return ZeroAddress;
+  //   } catch (error) {
+  //     console.error('Error buying ticket:', error);
+  //     throw new Error('Failed to buy ticket');
+  //   }
+  // }
+
+  // functions calling
+  async disableSubscription(userId: string, botId: string) {
+    await db
+    .update(subscriptions)
+    .set({expiredAt: new Date()})
+    .where(and(eq(subscriptions.userId, userId), eq(subscriptions.botId, botId), isNull(subscriptions.expiredAt)));
+  }
+
   async buyTicket(botId: string, userId: string, password: string): Promise<string> {
     try {
       const bot = await db.query.bots.findFirst({
@@ -191,11 +222,16 @@ export class BotService {
         throw new Error('Bot not found');
       }
 
+      // TODO: charge money
       const wallet = await this.walletService.getWallet(userId, password);
       // const signature = await this.executeBuyTicket(bot.address, wallet);
 
-      await this.updateSubscription(userId, botId);
+      const existingSubscription = await this.getValidSubscription(userId, botId)
+      if(existingSubscription) {
+        throw new Error('subscript was existed');
+      }
 
+      await this.createSubscription(userId, botId)
       return ZeroAddress;
     } catch (error) {
       console.error('Error buying ticket:', error);
@@ -267,6 +303,31 @@ export class BotService {
     } catch (error) {
       console.error('Error updating subscription:', error);
       throw new Error('Failed to update subscription');
+    }
+  }
+
+  async getValidSubscription (userId: string, botId: string): Promise<Subscription | void>  {
+    try {
+      return await db.query.subscriptions.findFirst({
+        where: and(eq(subscriptions.userId, userId), eq(subscriptions.botId, botId), isNull(subscriptions.expiredAt)),
+      });
+
+    } catch (error) {
+      console.error('Error get subscription:', error);
+      throw new Error('Failed to get valid subscription');
+    }
+  }
+
+  private async createSubscription(userId: string, botId: string): Promise<QueryResult<never>> {
+    try {
+      return await db.insert(subscriptions).values({
+        userId,
+        botId,
+        expiresAt: new Date()
+      });
+    } catch (error) {
+      console.error('Error creating subscription:', error);
+      throw new Error('Failed to create subscription');
     }
   }
 
@@ -382,6 +443,7 @@ export class BotService {
       return 0;
     }
   }
+
 }
 
 export const botService = BotService.getInstance();

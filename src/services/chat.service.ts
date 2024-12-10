@@ -5,6 +5,7 @@ import { Bot, Chat, ChatMessage, chat_messages, chats, User, bots } from '../inf
 import { delay } from '../util/common';
 import { MyContext } from '../util/interface';
 import { UserService } from './user.service';
+import { BotService } from './bot.service';
 import { OpenAIService } from './openai.service';
 import { ChatCompletionAssistantMessageParam, ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam } from 'openai/resources';
 
@@ -24,10 +25,12 @@ export class ChatService {
   private static instance: ChatService;
   private readonly openAIService: OpenAIService;
   private readonly userService: UserService;
+  private readonly botService: BotService;
 
   private constructor() {
     this.openAIService = OpenAIService.getInstance();
     this.userService = UserService.getInstance();
+    this.botService = BotService.getInstance();
   }
 
   public static getInstance(): ChatService {
@@ -128,12 +131,13 @@ export class ChatService {
       },
       ...history
     ]
-    const responseMessage = await this.handleOpenAIChat(messages);
+    const responseMessage = await this.handleOpenAIChat(messages, user, bot);
     const message = await this.saveBotMessage(threadId, user, bot, responseMessage);
     return [message]
   }
 
-  private async handleOpenAIChat(messages: any[]): Promise<string> {
+  private async handleOpenAIChat(messages: any[], user: User, bot: Bot): Promise<string> {
+
     return new Promise(async (res,rej)=> {
       const runner  = await this.openAIService.sendMessageWithChatComplele(messages);
       runner.on('finalContent', (final)=> {
@@ -142,6 +146,23 @@ export class ChatService {
       runner.on('error', (error)=> {
         console.log("OpenAI API returned an API error", error)
         rej(new Error(`Unknown message: ${error.message}`));
+      })
+      runner.on('functionCall', (message)=> {
+        this.botService.disableSubscription(user.id, bot.id)
+
+        switch(message.name) {
+          case 'reject': {
+            console.log("Bot rejects transaction");
+            break;
+          } 
+          case 'approve':  {
+            console.log("Bot approves transaction");
+            break;
+          }
+          default: {
+            throw new Error('Error occurred when doing transaction')
+          }
+        } 
       })
     })
   }
