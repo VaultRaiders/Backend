@@ -1,25 +1,45 @@
-import { ethers, formatEther } from 'ethers';
-import { cryptoAmountRound } from '../../util/format';
+import { EMOJI, TERMS, MessageFormat, createMessage } from './constant';
 
 export const TicketMessages = {
-  /**
-   * Successful purchase confirmation
-   * @param botName - Guardian name
-   */
   purchaseSuccess: (botName: string) =>
-    `Excellent, challenger! Your magical duel permit with ${botName} has been sealed! ⚔️\n\n` +
-    'The guardian awaits in the ancient chamber...\n' +
-    'They are eager to test your magical prowess! ⚡',
+    createMessage({
+      title: `${EMOJI.TICKET} Excellent, challenger! Your ${TERMS.ACCESS} with ${botName} has been sealed! ${EMOJI.COMBAT}`,
+      body: `The ${TERMS.OPPONENT} awaits in the ${TERMS.LOCATION}...\nThey are eager to test your magical prowess! ${EMOJI.MAGIC}`,
+    }),
 
-  /**
-   * Password request for permit purchase
-   * @param botName - Guardian name
-   */
-  requestPassword: (botName: string, tickePrice: bigint) =>
-    `Ah, seeking to challenge ${botName} in magical combat? A worthy choice! ⚔️\n\n` +
-    `The ritual requires ${cryptoAmountRound(formatEther(tickePrice))} Ξ. ⚡\n\n` +
-    'The guardian has been honing their arcane abilities...\n' +
-    'I require your password to prepare the ancient dueling grounds.\n\n' +
-    'Fear not - these walls have kept secrets for centuries. 🔮\n\n' +
-    '🔑 Your password is:',
+  requestPassword: (botName: string, ticketPrice: bigint) =>
+    createMessage({
+      title: `Ah, seeking to challenge ${botName} in ${TERMS.BATTLE}? A worthy choice! ${EMOJI.COMBAT}`,
+      body: `The ritual requires ${MessageFormat.formatCurrency(ticketPrice)}. ${EMOJI.MAGIC}\n\nThe ${
+        TERMS.OPPONENT
+      } has been honing their arcane abilities...\nI require your password to prepare the ancient dueling grounds.`,
+      note: `Fear not - these walls have kept secrets for centuries. ${EMOJI.MYSTIC}`,
+      action: `${EMOJI.KEY} Your password is:`,
+    }),
+
+  purchaseInProgress: (botName: string) =>
+    createMessage({
+      title: `${EMOJI.MAGIC} Preparing your ${TERMS.ACCESS}...`,
+      body: `The ancient wards are aligning for your confrontation with ${botName}. ${EMOJI.MYSTIC}`,
+    }),
+
+  purchaseError: (error: string) =>
+    createMessage({
+      title: `${EMOJI.WARNING} A disturbance in the magical energies!`,
+      body: `Your ${TERMS.ACCESS} ritual was disrupted: ${error}`,
+      action: 'Please try the enchantment again.',
+    }),
+
+  ticketExpired: (botName: string) =>
+    createMessage({
+      title: `${EMOJI.WARNING} Your magical seal with ${botName} has weakened!`,
+      body: `Your ${TERMS.ACCESS} has expired. Shall we forge a new one? ${EMOJI.MAGIC}`,
+      action: 'Select "Purchase Permit" to establish a fresh magical connection.',
+    }),
+
+  ticketActive: (botName: string, expiryTime: string) =>
+    createMessage({
+      title: `${EMOJI.TICKET} Your ${TERMS.ACCESS} pulses with power!`,
+      body: `You may challenge ${botName} until ${expiryTime}.\nThe ${TERMS.OPPONENT} awaits your challenge in the ${TERMS.LOCATION}. ${EMOJI.COMBAT}`,
+    }),
 };

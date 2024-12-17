@@ -1,121 +1,105 @@
-/**
- * Message templates for wallet management in the Vault Raider system.
- */
+import { EMOJI, TERMS, MessageFormat, createMessage } from './constant';
+
 export const WalletMessages = {
-  createNew: `Let us create your wallet, challenger! ⚔️
+  createNew: createMessage({
+    title: `Let us create your wallet, challenger! ${EMOJI.COMBAT}`,
+    body: 'First, we must establish a powerful password.\nThis ancient magic will protect your artifacts and magical essence.',
+    note: MessageFormat.formatWarnings([
+      'Guard your password',
+      'The wallet cannot be restored without it',
+      'Share it with no one - not even the guardians themselves',
+    ]),
+    action: `${EMOJI.KEY} Your password is:`,
+  }),
 
-First, we must establish a powerful password.
-This ancient magic will protect your artifacts and magical essence.
+  walletExists: createMessage({
+    title: `Challenger, you already possess a wallet! ${EMOJI.MAGIC}`,
+    body: 'One vault contains all the power you need - I personally maintain its protective wards.',
+    action: `Shall we inspect your current magical holdings instead? ${EMOJI.MYSTIC}`,
+  }),
 
-⚠️ Heed these warnings, challenger:
-• Guard your password
-• The wallet cannot be restored without it
-• Share it with no one - not even the guardians themselves
-
-🔑 Your password is:`,
-
-  walletExists: `Challenger, you already possess a wallet! ⚡
-
-One vault contains all the power you need - I personally maintain its protective wards.
-Shall we inspect your current magical holdings instead? 🔮`,
-
-  /**
-   * Display vault information and balances
-   * @param address - Vault address
-   * @param soulBalance - Soul Essence balance
-   * @param solBalance - ETH Crystal balance
-   */
   walletInfo: (address: string, solBalance: string) =>
-    `Welcome to your wallet, challenger! ⚔️
+    createMessage({
+      title: `Welcome to your wallet, challenger! ${EMOJI.COMBAT}`,
+      body: `Your address:\n${MessageFormat.formatAddress(address)}\n\n${TERMS.CURRENCY_NAME}: ${MessageFormat.formatCurrency(BigInt(solBalance))}`,
+      action: `What magical operations shall we perform today? ${EMOJI.MAGIC}`,
+    }),
 
-Your address:
-<code>${address}</code>
+  noWallet: createMessage({
+    title: `Ah, you have yet to establish your wallet! ${EMOJI.MYSTIC}`,
+    body: 'Fear not, challenger - I shall guide you through the ritual.\nHere we shall safeguard your magical artifacts and power reserves.',
+    action: `Choose your path, and I shall guide you through the ancient ceremonies... ${EMOJI.COMBAT}`,
+  }),
 
-ETH: <code>${solBalance} ETH</code>
+  deleteConfirmation: createMessage({
+    title: `${EMOJI.WARNING} Are you certain you wish to dissolve your wallet, challenger?`,
+    body: MessageFormat.formatWarnings([
+      'This ritual cannot be undone',
+      'All arcane seals will be lost to the void',
+      'Your magical tributes will cease to flow',
+    ]),
+    note: `I must ensure you fully comprehend this momentous decision... ${EMOJI.MYSTIC}`,
+  }),
 
-What magical operations shall we perform today? ⚡`,
+  deleteSuccess: createMessage({
+    title: `Your wallet has been dissolved as per your command... ${EMOJI.MAGIC}`,
+    body: 'Remember, challenger - you may always create a new wallet.',
+    action: `Shall I guide you through the creation of a new magical sanctum? ${EMOJI.COMBAT}`,
+  }),
 
-  noWallet: `Ah, you have yet to establish your wallet! 🔮
+  deleteCancelled: createMessage({
+    title: `Ah, you choose to maintain your wallet! A wise decision, challenger! ${EMOJI.MYSTIC}`,
+    body: 'Your magical holdings remain secure.',
+    action: `Shall we continue exploring the ancient mysteries? ${EMOJI.MAGIC}`,
+  }),
 
-Fear not, challenger - I shall guide you through the ritual.
-Here we shall safeguard your magical artifacts and power reserves.
-
-Choose your path, and I shall guide you through the ancient ceremonies... ⚔️`,
-
-  deleteConfirmation: `Are you certain you wish to dissolve your wallet, challenger? ⚠️
-
-⚠️ Consider these grave consequences:
-• This ritual cannot be undone
-• All arcane seals will be lost to the void
-• Your magical tributes will cease to flow
-
-I must ensure you fully comprehend this momentous decision... 🔮`,
-
-  deleteSuccess: `Your wallet has been dissolved as per your command... ⚡
-
-Remember, challenger - you may always create a new wallet.
-Shall I guide you through the creation of a new magical sanctum? ⚔️`,
-
-  deleteCancelled: `Ah, you choose to maintain your wallet! A wise decision, challenger! 🔮
-
-Your magical holdings remain secure.
-Shall we continue exploring the ancient mysteries? ⚡`,
-
-  /**
-   * Successful vault creation confirmation
-   * @param address - New vault address
-   */
   createSuccess: (address: string) =>
-    `Magnificent, challenger! Your wallet stands ready! ⚔️
+    createMessage({
+      title: `Magnificent, challenger! Your wallet stands ready! ${EMOJI.COMBAT}`,
+      body: `Behold your unique address:\n${MessageFormat.formatAddress(address)}`,
+      note: `Guard this signature well - it is your key to accessing the ancient powers... ${EMOJI.MAGIC}`,
+    }),
 
-Behold your unique address:
-<code>${address}</code>
-
-Guard this signature well - it is your key to accessing the ancient powers... ⚡`,
-
-  /**
-   * Private key information display
-   * @param privateKey - Vault private key
-   */
   privateKeyInfo: (privateKey: string) =>
-    `And here is your wallet's private key, challenger... 🔮
+    createMessage({
+      title: `And here is your wallet's private key, challenger... ${EMOJI.MYSTIC}`,
+      body: MessageFormat.formatAddress(privateKey),
+      note: MessageFormat.formatWarnings([
+        'Store this magical essence in an impenetrable sanctuary',
+        'Share it with no living soul',
+        'Keep your password sealed with powerful wards',
+      ]),
+      action: `Now, shall we explore the ancient trials that await? ${EMOJI.COMBAT}`,
+    }),
 
-<code>${privateKey}</code>
+  walletRequired: createMessage({
+    title: `Challenger, a wallet is required for these ancient rituals.`,
+    body: `Shall we forge one together? I shall ensure its wards are impenetrable... ${EMOJI.MYSTIC}`,
+  }),
 
-⚠️ Critical warnings:
-• Store this magical essence in an impenetrable sanctuary
-• Share it with no living soul
-• Keep your password sealed with powerful wards
+  lowBalance: (requiredAmount: bigint) =>
+    createMessage({
+      title: `${EMOJI.WARNING} Your magical reserves run low, brave challenger!`,
+      body: `This enchantment requires ${MessageFormat.formatCurrency(requiredAmount)}`,
+      action: 'Please replenish your crystal reserves to proceed.',
+    }),
 
-Now, shall we explore the ancient trials that await? ⚔️`,
+  transactionPending: createMessage({
+    title: `${EMOJI.MAGIC} The ethereal winds carry your decree...`,
+    body: 'Your transaction traverses the magical networks.',
+    note: 'Please wait while the ancient ledgers record your actions.',
+  }),
 
-  /**
-   * Soul Essence purchase prompt
-   * @param soulRate - Current Soul Essence exchange rate
-   */
-  buySoulPrompt: (soulRate: number) =>
-    `Let us transmute your crystals into Soul Essence, challenger! ⚡
+  transactionSuccess: createMessage({
+    title: `${EMOJI.MAGIC} The ancient ledgers have recorded your decree!`,
+    body: 'Your magical transaction is complete.',
+    action: 'Your updated holdings will be visible momentarily.',
+  }),
 
-Current magical exchange: 1 ETH Crystal yields ${soulRate} Soul Essence
-
-What quantity of Soul Essence do you seek?
-Simply state the amount (e.g., "1000" for 1000 Soul Essence)... 🔮`,
-
-  /**
-   * Confirm Soul Essence purchase
-   * @param soulAmount - Amount of Soul Essence to purchase
-   * @param solAmount - ETH Crystal cost
-   */
-  confirmSoulPurchase: (soulAmount: number, solAmount: string) =>
-    `A powerful choice, challenger! ⚔️
-
-${soulAmount} Soul Essence requires ${solAmount} ETH Crystals
-
-I require your password to perform this transmutation...
-
-🔑 Your password is:`,
-
-  walletRequired: `Challenger, a wallet is required for these ancient rituals.
-
-Shall we forge one together? I shall ensure its wards are impenetrable... 🔮`,
+  transactionError: (error: string) =>
+    createMessage({
+      title: `${EMOJI.WARNING} A disturbance in the ethereal flow!`,
+      body: `Your transaction encountered resistance: ${error}`,
+      action: 'Please try your magical operation again.',
+    }),
 };

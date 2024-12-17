@@ -61,8 +61,6 @@ export class BotHandler extends BaseHandler {
       await ctx.reply(botMessage(botDetail.displayName, botDetail.greeting));
     }
 
-    const suggestion = BotMessages.getRandomSuggestion();
-    await ctx.reply(hintMessage(suggestion));
     await ctx.reply(hintMessage(BotMessages.showMenuHint));
   }
 

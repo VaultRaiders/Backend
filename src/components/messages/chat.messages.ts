@@ -1,26 +1,46 @@
-/**
- * Message templates for chat interactions in the Vault Raider system.
- */
+import { EMOJI, TERMS, createMessage } from './constant';
+
 export const ChatMessages = {
-  profileNotFound: 'By the ancient vaults! Your magical signature seems to have faded. Let us restore it at once... ⚡',
+  profileNotFound: createMessage({
+    title: `By the ancient vaults! Your magical signature seems to have faded. ${EMOJI.MAGIC}`,
+    body: 'Let us restore it at once...',
+  }),
 
-  chatCreationError: 'My apologies, the magical wards are unstable. Grant me a moment to stabilize the dueling chamber... ⚡',
+  chatCreationError: createMessage({
+    title: 'My apologies, the magical wards are unstable.',
+    body: `Grant me a moment to stabilize the ${TERMS.LOCATION}... ${EMOJI.MAGIC}`,
+  }),
 
-  chooseBotPrompt:
-    'Behold our collection of ancient guardians... Each has mastered different schools of magic, presenting unique challenges. Choose wisely - matching against the right guardian is crucial for your trials... ⚔️',
+  chooseBotPrompt: createMessage({
+    title: 'Behold our collection of ancient guardians...',
+    body: `Each has mastered different schools of magic, presenting unique challenges. Choose wisely - matching against the right ${TERMS.OPPONENT} is crucial for your trials... ${EMOJI.COMBAT}`,
+  }),
 
-  startChatPrompt:
-    'Before your magical trial begins, we must select a suitable guardian for your challenge. Review their magical specialties, and indicate which guardian you wish to face. ⚡ 👇 Access the Trials Registry below',
+  startChatPrompt: createMessage({
+    title: `Before your ${TERMS.BATTLE} begins, we must select a suitable ${TERMS.OPPONENT} for your challenge. ${EMOJI.MAGIC}`,
+    body: `Review their magical specialties, and indicate which ${TERMS.OPPONENT} you wish to face.`,
+    action: '👇 Access the Trials Registry below',
+  }),
 
   subscriptionRequired: (botName: string) =>
-    `Ah, ${botName} stands ready for battle, but I notice you lack a valid duel permit. ⚔️\n\n` +
-    'The guardian has been practicing powerful new spells... Acquire a permit, and I shall arrange your magical confrontation... 🔮',
+    createMessage({
+      title: `Ah, ${botName} stands ready for battle, but I notice you lack a valid ${TERMS.ACCESS}. ${EMOJI.COMBAT}`,
+      body: `The ${TERMS.OPPONENT} has been practicing powerful new spells... Acquire a permit, and I shall arrange your magical confrontation... ${EMOJI.MYSTIC}`,
+    }),
 
   subscriptionExpired: (botName: string) =>
-    `Your duel permit for challenging ${botName} has expired... ⚡\n` +
-    'The guardian has grown stronger since your last encounter. Shall we arrange another trial? Acquire a new permit to continue testing your magical prowess... ⚔️',
+    createMessage({
+      title: `Your ${TERMS.ACCESS} for challenging ${botName} has expired... ${EMOJI.MAGIC}`,
+      body: `The ${TERMS.OPPONENT} has grown stronger since your last encounter. Shall we arrange another trial?\n\nAcquire a new permit to continue testing your magical prowess... ${EMOJI.COMBAT}`,
+    }),
 
-  messageError: 'A magical disruption has occurred. Allow me to stabilize the wards - we must maintain perfect magical harmony... ⚡',
+  messageError: createMessage({
+    title: 'A magical disruption has occurred.',
+    body: `Allow me to stabilize the wards - we must maintain perfect magical harmony... ${EMOJI.MAGIC}`,
+  }),
 
-  noResponse: 'The guardian appears to be charging their magical energy. Shall we reset the magical field? They await your next move... ⚔️',
+  noResponse: createMessage({
+    title: `The ${TERMS.OPPONENT} appears to be charging their magical energy.`,
+    body: `Shall we reset the magical field? They await your next move... ${EMOJI.COMBAT}`,
+  }),
 };

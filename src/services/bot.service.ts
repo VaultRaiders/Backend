@@ -279,8 +279,6 @@ export class BotService {
       await this.telegramBot.telegram.sendMessage(user.chatId, botMessage(bot.displayName, bot.greeting), { parse_mode: 'HTML' });
     }
 
-    const suggestion = BotMessages.getRandomSuggestion();
-    await this.telegramBot.telegram.sendMessage(user.chatId, hintMessage(suggestion), { parse_mode: 'HTML' });
     await this.telegramBot.telegram.sendMessage(user.chatId, hintMessage(BotMessages.showMenuHint), { parse_mode: 'HTML' });
   }
 
