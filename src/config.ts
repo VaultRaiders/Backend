@@ -17,8 +17,12 @@ export const MINI_APP_URL = process.env.MINI_APP_URL! || '';
 export const SERVER_PORT = Number(process.env.SERVER_PORT) || 3000;
 
 export const FACTORY_ADDRESS = process.env.FACTORY_ADDRESS! || '';
-export const POOL_PRIVATE_KEY = process.env.POOL_PRIVATE_KEY! || '';
+export const OWNER_PRIVATE_KEY = process.env.OWNER_PRIVATE_KEY! || '';
 
 export const REDIS_HOST = process.env.REDIS_HOST! || '';
 export const REDIS_PORT = Number(process.env.REDIS_PORT) || 6379;
 export const REDIS_PASSWORD = process.env.REDIS_PASSWORD! || '';
+
+export const config = {
+  assistantId: '0',
+};

@@ -51,7 +51,6 @@ export interface ICreateBotData {
   bio: string;
   greeting: string;
   prompt: string;
-  initKeys: number;
 }
 
 export interface IProccessedBotData extends ICreateBotData {

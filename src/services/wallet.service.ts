@@ -3,11 +3,11 @@ import { db } from '../infra/db';
 import { eq } from 'drizzle-orm';
 import * as crypto from 'crypto';
 import { wallets } from '../infra/schema';
-import { POOL_PRIVATE_KEY, RPC_URL } from '../config';
+import { OWNER_PRIVATE_KEY, RPC_URL } from '../config';
 
 export class WalletService {
   private static instance: WalletService;
-  private provider: JsonRpcProvider;
+  public provider: JsonRpcProvider;
 
   private constructor() {
     this.provider = new JsonRpcProvider(RPC_URL || 'http://localhost:8545');
@@ -94,15 +94,6 @@ export class WalletService {
 
     const privateKey = this.decryptPrivateKey(userWallet[0].encryptedKey, password);
     return new Wallet(privateKey, this.provider);
-  }
-
-  async getPoolWallet(): Promise<Wallet> {
-    return new Wallet(POOL_PRIVATE_KEY, this.provider);
-  }
-
-  async getPoolWalletAddress(): Promise<string> {
-    const wallet = await this.getPoolWallet();
-    return wallet.address;
   }
 
   async getWalletAddress(userId: string): Promise<string> {

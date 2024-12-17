@@ -57,22 +57,14 @@ export class ChatHandler extends BaseHandler {
     const messageText = ctx.message.text;
 
     try {
-      const sub = await this.botService.getValidSubscription(chat.userId, chat.botId);
-      if (!sub) {
+      const ticket = await this.botService.getAvailableTicket(bot.id, chat.userId);
+      if (!ticket) {
         await ctx.reply(systemMessage(ChatMessages.subscriptionRequired(bot.displayName)), {
           parse_mode: 'HTML',
           ...createSubscriptionRequiredKeyboard(),
         });
         return;
       }
-
-      // if (sub !== true && sub.expiresAt < new Date()) {
-      //   await ctx.reply(systemMessage(ChatMessages.subscriptionExpired(bot.displayName)), {
-      //     parse_mode: 'HTML',
-      //     ...createSubscriptionRequiredKeyboard(),
-      //   });
-      //   throw new Error('Subscription expired');
-      // }
 
       await this.processAndSendMessage(ctx, bot, chat, messageText);
     } catch (error: any) {

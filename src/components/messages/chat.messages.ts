@@ -13,7 +13,7 @@ export const ChatMessages = {
     'Before your magical trial begins, we must select a suitable guardian for your challenge. Review their magical specialties, and indicate which guardian you wish to face. ⚡ 👇 Access the Trials Registry below',
 
   subscriptionRequired: (botName: string) =>
-    `Ah, ${botName} stands ready for battle, but I notice you lack a valid duel permit. ⚔️\n` +
+    `Ah, ${botName} stands ready for battle, but I notice you lack a valid duel permit. ⚔️\n\n` +
     'The guardian has been practicing powerful new spells... Acquire a permit, and I shall arrange your magical confrontation... 🔮',
 
   subscriptionExpired: (botName: string) =>

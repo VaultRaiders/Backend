@@ -25,6 +25,7 @@ export class TicketHandler extends BaseHandler {
     }
 
     const bot = await this.botService.getBot(user.currentBotId);
+    const ticketPrice = await this.botService.getTicketPrice(bot.address as string);
     const botId = user.currentBotId;
 
     ctx.session = {
@@ -39,7 +40,7 @@ export class TicketHandler extends BaseHandler {
       },
     };
 
-    await ctx.editMessageText(systemMessage(TicketMessages.requestPassword(bot.displayName)), { parse_mode: 'HTML' });
+    await ctx.editMessageText(systemMessage(TicketMessages.requestPassword(bot.displayName, ticketPrice)), { parse_mode: 'HTML' });
   }
 
   async handlePasswordInput(ctx: MyContext, password: string) {

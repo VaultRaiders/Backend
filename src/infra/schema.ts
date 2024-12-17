@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { bigint, boolean, index, integer, json, pgTable, serial, smallint, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { bigint, boolean, decimal, index, integer, json, pgTable, serial, smallint, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   id: varchar('id', { length: 100 }).primaryKey().notNull(),
@@ -28,6 +28,7 @@ export const bots = pgTable(
     messageCount: integer('message_count').default(0),
     additionalInstructions: text('additional_instructions'),
     order: integer('order').default(1),
+    isActive: boolean('is_active').default(true),
     createdAt: timestamp('created_at').default(sql`now()`),
     updatedAt: timestamp('updated_at').default(sql`now()`),
   },
@@ -73,23 +74,25 @@ export const wallets = pgTable('wallets', {
   updatedAt: timestamp('updated_at').default(sql`now()`),
 });
 
-export const subscriptions = pgTable('subscriptions', {
+export const tickets = pgTable('tickets', {
   userId: varchar('user_id').notNull(),
   botId: varchar('bot_id').notNull(),
-  expiresAt: timestamp('expires_at').notNull(),
-  expiredAt: timestamp('expired_at'),
-  createdAt: timestamp('created_at').notNull().default(sql`now()`),
+  used: boolean('used').default(false),
+  txHash: varchar('tx_hash', { length: 255 }).notNull(),
+  price: decimal('price').notNull(),
+  updatedAt: timestamp('updated_at').default(sql`now()`),
+  createdAt: timestamp('created_at')
+    .notNull()
+    .default(sql`now()`),
 });
 
-// Types
 export type Wallet = typeof wallets.$inferSelect;
 export type NewWallet = typeof wallets.$inferInsert;
 
-export type Subscription = typeof subscriptions.$inferSelect;
+export type Ticket = typeof tickets.$inferSelect;
 
 export type UserConfig = typeof configs.$inferSelect;
 
-// Types
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 

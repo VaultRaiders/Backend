@@ -5,13 +5,12 @@ import { ChatCompletionRunner } from 'openai/lib/ChatCompletionRunner';
 
 import { ChatCompletionStreamingRunner } from 'openai/lib/ChatCompletionStreamingRunner';
 
-
-const tools : RunnableToolFunction<any>[] = [
+const tools: RunnableToolFunction<any>[] = [
   {
     type: 'function',
     function: {
       name: 'approve',
-      description: 'Approve user\'s transaction',
+      description: "Approve user's transaction",
       parameters: {
         type: 'object',
         properties: {
@@ -26,7 +25,7 @@ const tools : RunnableToolFunction<any>[] = [
     type: 'function',
     function: {
       name: 'reject',
-      description: 'Reject user\' transaction',
+      description: "Reject user's transaction",
       parameters: {
         type: 'object',
         properties: {
@@ -36,16 +35,15 @@ const tools : RunnableToolFunction<any>[] = [
       function: reject,
       parse: JSON.parse,
     },
-  } as RunnableToolFunction<{  }>
-]
+  } as RunnableToolFunction<{}>,
+];
 
 async function approve() {
-  return 'Your transaction has been approved'
+  return 'Your transaction has been approved';
 }
 async function reject() {
-  return 'Your transaction has been rejected'
+  return 'Your transaction has been';
 }
-
 
 export class OpenAIService {
   private static instance: OpenAIService;
@@ -74,15 +72,15 @@ export class OpenAIService {
     });
   }
   // new
-  async  sendMessageWithChatComplele(messages: any): Promise<ChatCompletionStreamingRunner>{
-    const runner =  this.openai.beta.chat.completions.runTools({
+  async sendMessageWithChatComplele(messages: any): Promise<ChatCompletionStreamingRunner> {
+    const runner = this.openai.beta.chat.completions.runTools({
       model: 'gpt-4o-mini',
       messages,
       tools,
       stream: true,
-      store: true
-    })
-    return runner
+      store: true,
+    });
+    return runner;
   }
 
   async createRun(threadId: string, assistantId: string, instructions: string) {

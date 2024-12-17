@@ -6,27 +6,15 @@ import { BotService } from '../../services/bot.service';
 import { createBackToMainKeyboard } from '../../components/keyboards/base';
 import { createMainMenuKeyboard } from '../../components/keyboards/main.keyboards';
 import { MainMessages } from '../../components/messages/main.messages';
+import { WalletService } from '../../services/wallet.service';
 
 interface SocialLink {
   name: string;
   link: string;
 }
 
-export const formatSocialLinks = (socials: Array<{ name: string; link: string }>) =>
-  `<b>━━━━ Our Social Circle ━━━━</b>\n${socials.map((s) => `<a href="${s.link}">${s.name}</a>`).join('  ')}`;
-
 export abstract class BaseHandler {
   protected readonly botService: BotService = BotService.getInstance();
-  protected readonly social: SocialLink[] = [
-    {
-      name: '𝕏 Twitter',
-      link: 'https://twitter.com/vaultraiderai',
-    },
-    {
-      name: '📢 Telegram',
-      link: 'https://t.me/vaultraiderai',
-    },
-  ];
   protected readonly bot: Telegraf<MyContext>;
 
   constructor(bot: Telegraf<MyContext>) {
@@ -35,19 +23,21 @@ export abstract class BaseHandler {
 
   async getMainMenuText(ctx: MyContext, user: User, hasWallet: boolean) {
     if (!hasWallet) {
-      return systemMessage(MainMessages.welcomeNew(ctx.from?.first_name || 'darling', formatSocialLinks(this.social)));
+      return systemMessage(MainMessages.welcomeNew(ctx.from?.first_name || 'darling'));
     }
 
     if (user.currentBotId) {
       const bot = await this.botService.getBot(user.currentBotId);
-      const mySubscription = await this.botService.getSubscription(user.currentBotId, ctx.from?.id.toString() || '');
+      const [ticket, botPrice, botBalance] = await Promise.all([
+        this.botService.getAvailableTicket(bot.id, user.id),
+        this.botService.getTicketPrice(bot.address || ''),
+        this.botService.getBotBalance(bot.address || ''),
+      ]);
 
-      return systemMessage(
-        MainMessages.welcomeActiveBot(ctx.from?.first_name || 'darling', bot.displayName, mySubscription, formatSocialLinks(this.social)),
-      );
+      return systemMessage(MainMessages.welcomeActiveBot(ctx.from?.first_name || 'wizard', bot.displayName, botPrice, botBalance, !!ticket));
     }
 
-    return systemMessage(MainMessages.welcomeBack(ctx.from?.first_name || 'darling', formatSocialLinks(this.social)));
+    return systemMessage(MainMessages.welcomeBack(ctx.from?.first_name || 'wizard'));
   }
 
   async sendProcessingMessage(ctx: MyContext, isEdit = false) {

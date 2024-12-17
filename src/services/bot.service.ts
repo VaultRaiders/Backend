@@ -1,16 +1,13 @@
-import { AnchorProvider, BN, Program, Wallet } from '@coral-xyz/anchor';
-import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram } from '@solana/web3.js';
 import { and, eq, sql, isNull, cosineDistance } from 'drizzle-orm';
 import { asc, desc, inArray } from 'drizzle-orm/expressions';
 import { randomUUID } from 'node:crypto';
 import OpenAI from 'openai';
-import { FACTORY_ADDRESS, OPENAI_API_KEY } from '../config';
-import { MAX_SUPPLY, PRICE_DECIMALS, PRICE_DENOMINATOR, REDIS_TTL, SUBSCRIPTION_DURATION } from '../constant';
+import { config, FACTORY_ADDRESS, OPENAI_API_KEY } from '../config';
+import { REDIS_TTL } from '../constant';
 import { db } from '../infra/db';
-import { Bot, bots, Chat, chats, subscriptions, User, users, Subscription } from '../infra/schema';
+import { Bot, bots, Chat, chats, tickets, User, users } from '../infra/schema';
 import { botMessage, hintMessage } from '../util/common';
 import { ICreateBotData, IProccessedBotData } from '../util/interface';
-import { getHolderPDA } from '../util/pda';
 import { getRedisAllBotsKey, getRedisOneBotKey } from '../util/redis';
 import { RedisService } from './redis.service';
 import { WalletService } from './wallet.service';
@@ -19,8 +16,12 @@ import { ApiError, BadRequestError, NotFoundError } from '../types/errors';
 import { Telegram } from '../infra/telegram';
 import { BotMessages } from '../components/messages/bot.messages';
 import { UserService } from './user.service';
-import { ZeroAddress } from 'ethers';
+import { ethers, formatEther, ZeroAddress } from 'ethers';
 import { QueryResult } from 'pg';
+import FactoryAbi from '../types/abi/iFactory.json';
+import BotAbi from '../types/abi/iBot.json';
+import { IBot, IFactory } from '../types/typechain-types';
+import { BotCreatedEvent } from '../types/typechain-types/contracts/IFactory';
 
 export class BotService {
   private static instance: BotService;
@@ -121,40 +122,41 @@ export class BotService {
 
   async createBot(userId: string, botData: ICreateBotData, password: string): Promise<Bot> {
     const wallet = await this.walletService.getWallet(userId, password);
-    // const factoryPublicKey = new PublicKey(FACTORY_ADDRESS);
-    // const factoryState = await this.program.account.factoryState.fetch(factoryPublicKey);
-    // const program = await this.getProgram(new Wallet(wallet));
+    const iFactory = new ethers.Contract(FACTORY_ADDRESS, FactoryAbi, wallet.provider) as unknown as IFactory;
 
-    // const userBalance = await this.connection.getBalance(wallet.publicKey);
-    // if (userBalance < Number(factoryState.botCreationFee) * 1.1) {
-    //   throw new BadRequestError('Insufficient balance for bot creation');
-    // }
+    const userBalance = await this.walletService.getBalance(wallet.address);
+    const botCreationFee = await iFactory.botCreationFee();
+    if (userBalance < Number(botCreationFee) * 1.05) {
+      throw new BadRequestError('Insufficient balance for bot creation');
+    }
 
-    const config = (await db.query.configs.findFirst())!.value;
-    const botInDb = await this.createBotInDatabase(userId, botData, config);
+    const botInDb = await this.createBotInDatabase(userId, botData);
 
     try {
-      // const [botPda] = PublicKey.findProgramAddressSync(
-      //   [Buffer.from('bot'), factoryPublicKey.toBuffer(), factoryState.totalBots.toArrayLike(Buffer, 'le', 8)],
-      //   program.programId,
-      // );
+      const tx = await iFactory.connect(wallet).createBot(wallet.address, 0n, {
+        value: botCreationFee,
+      });
 
-      // const signature = await program.methods
-      //   .createBot(new BN(LAMPORTS_PER_SOL), botData.initKeys)
-      //   .accountsStrict({
-      //     factory: factoryPublicKey,
-      //     bot: botPda,
-      //     owner: wallet.publicKey,
-      //     systemProgram: SystemProgram.programId,
-      //   })
-      //   .signers([wallet])
-      //   .rpc();
+      const receipt = await tx.wait();
+      if (!receipt || receipt.status === 0) {
+        throw new Error('Bot creation failed');
+      }
 
-      // await this.walletService.confirmTransaction(signature);
-      // await db.update(bots).set({ address: botPda.toString() }).where(eq(bots.id, botInDb.id));
+      const event = receipt.logs.find((log) => {
+        const decoded = iFactory.interface.parseLog(log);
+        return decoded?.name === 'BotCreated';
+      });
+
+      if (!event) {
+        throw new Error('Bot creation failed');
+      }
+
+      const botAddress = (event as BotCreatedEvent.Log).args.botAddress.toLowerCase();
+
+      await db.update(bots).set({ address: botAddress }).where(eq(bots.id, botInDb.id));
       return {
         ...botInDb,
-        address: ZeroAddress,
+        address: botAddress,
       };
     } catch (error) {
       await db.delete(bots).where(eq(bots.id, botInDb.id));
@@ -182,82 +184,84 @@ export class BotService {
     return bot;
   }
 
-  // async buyTicket(botId: string, userId: string, password: string): Promise<string> {
-  //   try {
-  //     const bot = await db.query.bots.findFirst({
-  //       where: eq(bots.id, botId),
-  //     });
-
-  //     if (!bot?.address) {
-  //       throw new Error('Bot not found');
-  //     }
-
-  //     const wallet = await this.walletService.getWallet(userId, password);
-  //     // const signature = await this.executeBuyTicket(bot.address, wallet);
-
-  //     await this.updateSubscription(userId, botId);
-
-  //     return ZeroAddress;
-  //   } catch (error) {
-  //     console.error('Error buying ticket:', error);
-  //     throw new Error('Failed to buy ticket');
-  //   }
-  // }
-
-  // functions calling
-  async disableSubscription(userId: string, botId: string) {
-    await db
-    .update(subscriptions)
-    .set({expiredAt: new Date()})
-    .where(and(eq(subscriptions.userId, userId), eq(subscriptions.botId, botId), isNull(subscriptions.expiredAt)));
+  async getBotBalance(botAddress: string): Promise<bigint> {
+    return this.walletService.getBalance(botAddress);
   }
 
-  async buyTicket(botId: string, userId: string, password: string): Promise<string> {
+  async disableTicket(userId: string, botId: string) {
+    const ticket = await db.query.tickets.findFirst({
+      where: and(eq(tickets.userId, userId), eq(tickets.botId, botId), eq(tickets.used, false)),
+    });
+
+    if (!ticket) {
+      throw new NotFoundError('Ticket not found');
+    }
+
+    await db
+      .update(tickets)
+      .set({ used: true })
+      .where(and(eq(tickets.userId, userId), eq(tickets.botId, botId)));
+  }
+
+  async buyTicket(botId: string, userId: string, password: string) {
     try {
       const bot = await db.query.bots.findFirst({
         where: eq(bots.id, botId),
       });
 
       if (!bot?.address) {
-        throw new Error('Bot not found');
+        throw new NotFoundError('Bot not found');
       }
 
-      // TODO: charge money
       const wallet = await this.walletService.getWallet(userId, password);
-      // const signature = await this.executeBuyTicket(bot.address, wallet);
+      const iBot = new ethers.Contract(bot.address, BotAbi, wallet.provider) as unknown as IBot;
+      const ticketPrice = await this.getTicketPrice(bot.address);
+      const userBalance = await this.walletService.getBalance(wallet.address);
 
-      const existingSubscription = await this.getValidSubscription(userId, botId)
-      if(existingSubscription) {
-        throw new Error('subscript was existed');
+      if (userBalance < ticketPrice) {
+        throw new BadRequestError('Insufficient balance for ticket purchase');
       }
 
-      await this.createSubscription(userId, botId)
-      return ZeroAddress;
+      const ticket = await db.query.tickets.findFirst({
+        where: and(eq(tickets.userId, userId), eq(tickets.botId, botId), eq(tickets.used, false)),
+      });
+      if (ticket) {
+        throw new BadRequestError('Ticket already purchased');
+      }
+
+      const tx = await iBot.connect(wallet).buyTicket({ value: ticketPrice });
+      const receipt = await tx.wait();
+      if (!receipt || receipt.status === 0) {
+        throw new Error('Ticket purchase failed');
+      }
+
+      return await db.insert(tickets).values({
+        userId,
+        botId,
+        txHash: receipt.hash,
+        price: formatEther(ticketPrice),
+        used: false,
+      });
     } catch (error) {
       console.error('Error buying ticket:', error);
       throw new Error('Failed to buy ticket');
     }
   }
 
-  async getSubscription(botId: string, userId: string) {
-    const bot = await this.getBot(botId);
-    if (!bot.createdBy || bot.createdBy == userId) {
-      return true;
-    }
-
+  async getAvailableTicket(botId: string, userId: string) {
     try {
-      return await db.query.subscriptions.findFirst({
-        where: and(eq(subscriptions.userId, userId), eq(subscriptions.botId, botId)),
+      return await db.query.tickets.findFirst({
+        where: and(eq(tickets.userId, userId), eq(tickets.botId, botId), eq(tickets.used, false)),
       });
     } catch (error) {
-      console.error('Error fetching subscription:', error);
-      throw new Error('Failed to fetch subscription');
+      throw new Error('Failed to fetch ticket');
     }
   }
 
   async getTicketPrice(botAddress: string) {
     try {
-      return 1n;
+      const bot = new ethers.Contract(botAddress, BotAbi, this.walletService.provider) as unknown as IBot;
+      return await bot.getPrice();
     } catch (error) {
       console.error('Error getting ticket price:', error);
       throw new Error('Failed to get ticket price');
@@ -278,57 +282,6 @@ export class BotService {
     const suggestion = BotMessages.getRandomSuggestion();
     await this.telegramBot.telegram.sendMessage(user.chatId, hintMessage(suggestion), { parse_mode: 'HTML' });
     await this.telegramBot.telegram.sendMessage(user.chatId, hintMessage(BotMessages.showMenuHint), { parse_mode: 'HTML' });
-  }
-
-  private async updateSubscription(userId: string, botId: string): Promise<void> {
-    try {
-      const existingSubscription = await db.query.subscriptions.findFirst({
-        where: and(eq(subscriptions.userId, userId), eq(subscriptions.botId, botId)),
-      });
-
-      const newExpiryDate = new Date(Math.max(Date.now(), existingSubscription?.expiresAt.getTime() ?? Date.now()) + SUBSCRIPTION_DURATION);
-
-      if (existingSubscription) {
-        await db
-          .update(subscriptions)
-          .set({ expiresAt: newExpiryDate })
-          .where(and(eq(subscriptions.userId, userId), eq(subscriptions.botId, botId)));
-      } else {
-        await db.insert(subscriptions).values({
-          userId,
-          botId,
-          expiresAt: newExpiryDate,
-        });
-      }
-    } catch (error) {
-      console.error('Error updating subscription:', error);
-      throw new Error('Failed to update subscription');
-    }
-  }
-
-  async getValidSubscription (userId: string, botId: string): Promise<Subscription | void>  {
-    try {
-      return await db.query.subscriptions.findFirst({
-        where: and(eq(subscriptions.userId, userId), eq(subscriptions.botId, botId), isNull(subscriptions.expiredAt)),
-      });
-
-    } catch (error) {
-      console.error('Error get subscription:', error);
-      throw new Error('Failed to get valid subscription');
-    }
-  }
-
-  private async createSubscription(userId: string, botId: string): Promise<QueryResult<never>> {
-    try {
-      return await db.insert(subscriptions).values({
-        userId,
-        botId,
-        expiresAt: new Date()
-      });
-    } catch (error) {
-      console.error('Error creating subscription:', error);
-      throw new Error('Failed to create subscription');
-    }
   }
 
   private async enrichBotsWithCreatorData(data: any[]) {
@@ -357,13 +310,13 @@ export class BotService {
       .replace(/-$/, '')}-${randomUUID().split('-')[0]}`;
   }
 
-  private async createBotInDatabase(userId: string, botData: ICreateBotData, config: any): Promise<Bot> {
+  private async createBotInDatabase(userId: string, botData: ICreateBotData): Promise<Bot> {
     const additionalInstructions = botData.prompt;
     const data = await db
       .insert(bots)
       .values({
         id: this.generateSlug(botData.displayName),
-        openaiAssistantId: config.assistant_id,
+        openaiAssistantId: config.assistantId,
         displayName: botData.displayName,
         prompt: botData.prompt,
         createdBy: userId,
@@ -374,30 +327,10 @@ export class BotService {
     return data[0];
   }
 
-  private async executeBuyTicket(botAddress: string, wallet: Keypair): Promise<string> {
-    // const program = await this.getProgram(new Wallet(wallet));
-    // const botPDA = new PublicKey(botAddress);
-    // const botAccount = await this.getBotAccount(botAddress);
-
-    // const signature = await program.methods
-    //   .buyTicket()
-    //   .accountsStrict({
-    //     factory: botAccount.factory,
-    //     bot: botPDA,
-    //     buyer: wallet.publicKey,
-    //     systemProgram: SystemProgram.programId,
-    //   })
-    //   .signers([wallet])
-    //   .rpc();
-
-    // await this.walletService.confirmTransaction(signature);
-    return ZeroAddress;
-  }
-
   async getValidBotsForUser(userId: string): Promise<Bot[]> {
     try {
-      const activeSubscriptions = await db.query.subscriptions.findMany({
-        where: and(eq(subscriptions.userId, userId), sql`${subscriptions.expiresAt} > NOW()`),
+      const activeSubscriptions = await db.query.tickets.findMany({
+        where: and(eq(tickets.userId, userId), eq(tickets.used, false)),
       });
 
       if (!activeSubscriptions.length) return [];
@@ -427,23 +360,6 @@ export class BotService {
       return [];
     }
   }
-
-  async getActiveSubscribers(botId: string): Promise<number> {
-    try {
-      const activeSubscribers = await db
-        .select({
-          count: sql<number>`count(*)`,
-        })
-        .from(subscriptions)
-        .where(and(eq(subscriptions.botId, botId), sql`${subscriptions.expiresAt} > NOW()`));
-
-      return activeSubscribers[0].count;
-    } catch (error) {
-      console.error('Error getting active subscriptions:', error);
-      return 0;
-    }
-  }
-
 }
 
 export const botService = BotService.getInstance();
