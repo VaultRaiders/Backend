@@ -1,0 +1,1 @@
+ALTER TABLE "tickets" ALTER COLUMN "id" SET DEFAULT 'f34da903-7bf2-4aef-af0b-ff438be8f64d';

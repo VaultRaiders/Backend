@@ -47,7 +47,7 @@ export class BotHandler extends BaseHandler {
     await ctx.sendChatAction('typing');
     await ctx.reply(systemMessage(BotMessages.selectionSuccess(botDetail.displayName)), { parse_mode: 'HTML' });
 
-    await this.chatService.getOrCreateChat(userId, botDetail);
+    // await this.chatService.getOrCreateChat(userId, botDetail);
     await this.sendBotGreeting(ctx, botDetail);
   }
 
@@ -122,7 +122,7 @@ export class BotHandler extends BaseHandler {
       ...createBackToMainKeyboard(),
     });
 
-    await this.chatService.getOrCreateChat(userId, bot);
+    // await this.chatService.getOrCreateChat(userId, bot);
     await this.sendBotGreeting(ctx, bot);
   }
 }

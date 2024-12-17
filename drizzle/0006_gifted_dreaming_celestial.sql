@@ -1,0 +1,1 @@
+ALTER TABLE "tickets" ADD COLUMN "id" text PRIMARY KEY DEFAULT 'dbd02ecb-b3fd-43a6-a623-a06fe3d5d113' NOT NULL;

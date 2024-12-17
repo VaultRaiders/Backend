@@ -1,7 +1,7 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { db } from '../infra/db';
-import { Bot, Chat, ChatMessage, chat_messages, chats, User, bots } from '../infra/schema';
+import { Bot, Chat, ChatMessage, chat_messages, chats, User, bots, Ticket } from '../infra/schema';
 import { delay } from '../util/common';
 import { MyContext } from '../util/interface';
 import { UserService } from './user.service';
@@ -40,7 +40,7 @@ export class ChatService {
     return ChatService.instance;
   }
 
-  async handleTextMessage(currentChat: Chat, messageText: string, ctx: MyContext): Promise<ChatResponse> {
+  async handleTextMessage(currentChat: Chat, messageText: string, ctx: MyContext, ticket: Ticket): Promise<ChatResponse> {
     try {
       const user = await this.userService.getOrCreateUser(currentChat.userId, ctx.from?.username, ctx.chat?.id?.toString());
 
@@ -56,7 +56,7 @@ export class ChatService {
         throw new Error('Bot not found.');
       }
 
-      const chat = await this.getOrCreateChat(user.id, bot);
+      const chat = await this.getOrCreateChat(user.id, bot, ticket);
       const threadId = chat.id;
       await this.saveUserMessage(currentChat.id, user, bot, messageText);
 
@@ -71,9 +71,9 @@ export class ChatService {
     }
   }
 
-  async getOrCreateChat(userId: string, bot: Bot): Promise<Chat> {
+  async getOrCreateChat(userId: string, bot: Bot, ticket: Ticket): Promise<Chat> {
     const userChat = await db.query.chats.findFirst({
-      where: and(eq(chats.id, `${userId}_${bot.id}`)),
+      where: and(eq(chats.id, `${userId}_${bot.id}_${ticket.id.split("-")[0]}`)),
     });
 
     if (userChat) return userChat;
@@ -81,7 +81,7 @@ export class ChatService {
     const [newChat] = await db
       .insert(chats)
       .values({
-        id: `${userId}_${bot.id}`,
+        id: `${userId}_${bot.id}_${ticket.id.split("-")[0]}`,
         userId: userId,
         botId: bot.id,
       })

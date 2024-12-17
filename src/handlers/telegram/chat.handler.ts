@@ -1,7 +1,7 @@
 import { MyContext } from '../../util/interface';
 import { BaseHandler } from './base.handler';
 import { MINI_APP_URL } from '../../config';
-import { Bot, Chat, ChatMessage } from '../../infra/schema';
+import { Bot, Chat, ChatMessage, Ticket } from '../../infra/schema';
 import { ChatService } from '../../services/chat.service';
 import { UserService } from '../../services/user.service';
 import { botMessage, systemMessage } from '../../util/common';
@@ -15,7 +15,7 @@ export class ChatHandler extends BaseHandler {
   private readonly chatService = ChatService.getInstance();
   private readonly userService = UserService.getInstance();
 
-  private async getCurrentChat(ctx: MyContext) {
+  private async validateCurrentChat(ctx: MyContext): Promise<{bot: Bot, ticket: Ticket, chat: Chat} | undefined> {
     if (!ctx.message || !ctx.from) {
       await ctx.reply(systemMessage(ErrorMessages.connectionIssue));
       return;
@@ -34,39 +34,39 @@ export class ChatHandler extends BaseHandler {
     }
 
     const bot = await this.botService.getBot(user.currentBotId);
-    const chat = await this.chatService.getOrCreateChat(user.id, bot);
+    if (!bot) {
+      return;
+    }
+    const ticket = await this.botService.getAvailableTicket(bot.id, user.id)
+
+    if(!ticket) {
+      await ctx.reply(systemMessage(ChatMessages.subscriptionRequired(bot.displayName)), {
+        parse_mode: 'HTML',
+        ...createSubscriptionRequiredKeyboard(),
+      });
+      return;
+    }
+
+    const chat = await this.chatService.getOrCreateChat(user.id, bot, ticket);
 
     if (!chat) {
       await ctx.reply(systemMessage(ChatMessages.chatCreationError));
       return;
     }
 
-    return chat;
+    return {chat, ticket, bot};
   }
 
   async handleChatMessage(ctx: MyContext) {
     if (!ctx.message || !('text' in ctx.message)) return;
 
-    const chat = await this.getCurrentChat(ctx);
-    if (!chat) return;
-    const bot = await this.botService.getBot(chat.botId);
-    if (!bot) {
-      return;
-    }
+    const validatedEntities = await this.validateCurrentChat(ctx);
+    if(!validatedEntities) return
 
     const messageText = ctx.message.text;
 
     try {
-      const ticket = await this.botService.getAvailableTicket(bot.id, chat.userId);
-      if (!ticket) {
-        await ctx.reply(systemMessage(ChatMessages.subscriptionRequired(bot.displayName)), {
-          parse_mode: 'HTML',
-          ...createSubscriptionRequiredKeyboard(),
-        });
-        return;
-      }
-
-      await this.processAndSendMessage(ctx, bot, chat, messageText);
+      await this.processAndSendMessage(ctx, validatedEntities.bot, validatedEntities.chat, messageText, validatedEntities.ticket);
     } catch (error: any) {
       if (!error.message.includes('Subscription expired')) {
         await ctx.reply(systemMessage(ErrorMessages.processingError(error.message)));
@@ -74,9 +74,9 @@ export class ChatHandler extends BaseHandler {
     }
   }
 
-  private async processAndSendMessage(ctx: MyContext, bot: Bot, chat: Chat, messageText: string) {
+  private async processAndSendMessage(ctx: MyContext, bot: Bot, chat: Chat, messageText: string, ticket: Ticket) {
     ctx.sendChatAction('typing');
-    const backendResponse = await this.chatService.handleTextMessage(chat, messageText, ctx);
+    const backendResponse = await this.chatService.handleTextMessage(chat, messageText, ctx, ticket);
 
     if (backendResponse.error) {
       await ctx.reply(systemMessage(ChatMessages.messageError));

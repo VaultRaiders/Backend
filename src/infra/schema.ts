@@ -75,6 +75,7 @@ export const wallets = pgTable('wallets', {
 });
 
 export const tickets = pgTable('tickets', {
+  id: text('id').notNull().primaryKey(),
   userId: varchar('user_id').notNull(),
   botId: varchar('bot_id').notNull(),
   used: boolean('used').default(false),

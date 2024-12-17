@@ -236,6 +236,7 @@ export class BotService {
       }
 
       return await db.insert(tickets).values({
+        id: randomUUID(),
         userId,
         botId,
         txHash: receipt.hash,
