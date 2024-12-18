@@ -12,6 +12,10 @@ export const BotMessages = {
     `${EMOJI.KEY} Your password is:`,
 
   creationInProgress: `One moment... The magical wards are aligning for your new ${TERMS.OPPONENT}. ${EMOJI.MAGIC}`,
+  
+  botInactive: (botName: string) =>
+    `Alas! ${botName} is currently dormant and cannot duel at this moment. ${EMOJI.SLEEPING}\n` +
+    `It seems the magical energies have waned. Come back when ${botName} is ready to unleash its might! ${EMOJI.MYSTIC}`,
 
   creationSuccess: (botName: string) =>
     `Excellent! The magical contract with ${botName} has been sealed. ${EMOJI.COMBAT}\n` +

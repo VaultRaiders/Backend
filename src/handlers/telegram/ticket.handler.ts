@@ -25,6 +25,11 @@ export class TicketHandler extends BaseHandler {
     }
 
     const bot = await this.botService.getBot(user.currentBotId);
+
+    if(!bot.isActive) {
+      return ctx.reply(systemMessage(BotMessages.botInactive(bot.displayName)), createOpenAppKeyboard())
+    }
+
     const ticketPrice = await this.botService.getTicketPrice(bot.address as string);
     const botId = user.currentBotId;
 

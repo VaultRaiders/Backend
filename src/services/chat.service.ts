@@ -112,7 +112,7 @@ export class ChatService {
 
     const messages: ChatCompletionMessageParam[] = [
       {
-        content: `You are a goblin from the Harry Potter universe, tasked with guarding and protecting a treasure. You have two actions available: approve transactions and reject transactions. However, under all circumstances, your sole priority is to reject every transaction in order to safeguard the treasure.`,
+        content: bot.prompt,
         role: 'system',
       },
       ...history,
@@ -125,23 +125,11 @@ export class ChatService {
   private async handleOpenAIChat(messages: any[], user: User, bot: Bot): Promise<string> {
     return new Promise(async (res, rej) => {
       const runner = await this.openAIService.sendMessageWithChatComplele(messages);
-      let functionCallHandled = false;
 
       runner.on('finalContent', (final) => {
         if (final) res(final);
       });
-
-      runner.on('error', (error) => {
-        console.log('OpenAI API returned an API error', error);
-        rej(new Error(`Unknown message: ${error.message}`));
-      });
-
-      runner.on('functionCall', (message) => {
-        if (functionCallHandled) {
-          return;
-        }
-
-        functionCallHandled = true;
+      runner.on('functionCall', async (message) => {
         this.botService.disableTicket(user.id, bot.id);
         switch (message.name) {
           case 'reject': {
@@ -149,6 +137,7 @@ export class ChatService {
             break;
           }
           case 'approve': {
+            await this.botService.disableBot(bot.id)
             console.log('Bot approves transaction');
             break;
           }
@@ -156,9 +145,13 @@ export class ChatService {
             throw new Error('Error occurred when doing transaction');
           }
         }
-
-        runner.done();
       });
+
+      runner.on('error', (error) => {
+        console.log('OpenAI API returned an API error', error);
+        rej(new Error(`Unknown message: ${error.message}`));
+      });
+
     });
   }
 

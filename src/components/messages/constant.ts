@@ -8,6 +8,7 @@ export const EMOJI = {
   WARNING: '⚠️', // For important warnings
   KEY: '🔑', // For passwords, security
   TICKET: '🎟️', // For permits, access
+  SLEEPING: '💤', // For inactive or sleeping status
 } as const;
 
 export const TERMS = {

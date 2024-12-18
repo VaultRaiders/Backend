@@ -24,6 +24,7 @@ export const createBotSchema = z.object({
     displayName: z.string().min(1).max(255),
     bio: z.string().optional(),
     prompt: z.string(),
+    photoUrl: z.string(),
     password: z.string(),
   }),
 });

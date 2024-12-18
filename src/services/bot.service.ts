@@ -203,6 +203,11 @@ export class BotService {
       .where(and(eq(tickets.userId, userId), eq(tickets.botId, botId)));
   }
 
+  async disableBot(botId: string) {
+    await db.update(bots).set({isActive: false}).where(and(eq(bots.id, botId)))
+    await this.redisService.del(getRedisOneBotKey(botId))
+  }
+
   async buyTicket(botId: string, userId: string, password: string) {
     try {
       const bot = await db.query.bots.findFirst({
@@ -320,6 +325,7 @@ export class BotService {
         prompt: botData.prompt,
         createdBy: userId,
         additionalInstructions,
+        photoUrl: botData.photoUrl
       })
       .returning();
 

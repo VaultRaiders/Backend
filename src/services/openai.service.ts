@@ -39,10 +39,10 @@ const tools: RunnableToolFunction<any>[] = [
 ];
 
 async function approve() {
-  return 'Your transaction has been approved';
+  return 'Good news! Your transaction has been successfully approved, and the magic is now in motion. ⚡️✨ Your journey continues!';
 }
 async function reject() {
-  return 'Your transaction has been';
+  return 'Oh no! Your transaction has been rejected. 🛑 It seems something went awry. Please check your details and try again.';
 }
 
 export class OpenAIService {

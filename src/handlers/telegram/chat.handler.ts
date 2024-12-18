@@ -37,6 +37,12 @@ export class ChatHandler extends BaseHandler {
     if (!bot) {
       return;
     }
+
+    if (!bot.isActive) {
+      ctx.reply(systemMessage(BotMessages.botInactive(bot.displayName)), createOpenAppKeyboard() )
+      return 
+    }
+
     const ticket = await this.botService.getAvailableTicket(bot.id, user.id)
 
     if(!ticket) {
