@@ -2,13 +2,13 @@ import { EMOJI, TERMS, createMessage } from './constant';
 
 export const ChatMessages = {
   profileNotFound: createMessage({
-    title: `By the ancient vaults! Your magical signature seems to have faded. ${EMOJI.MAGIC}`,
+    title: `By the ancient vaults! Your magical signature seems to have faded.`,
     body: 'Let us restore it at once...',
   }),
 
   chatCreationError: createMessage({
     title: 'My apologies, the magical wards are unstable.',
-    body: `Grant me a moment to stabilize the ${TERMS.LOCATION}... ${EMOJI.MAGIC}`,
+    body: `Grant me a moment to stabilize the ${TERMS.LOCATION}...`,
   }),
 
   chooseBotPrompt: createMessage({
@@ -17,7 +17,7 @@ export const ChatMessages = {
   }),
 
   startChatPrompt: createMessage({
-    title: `Before your ${TERMS.BATTLE} begins, we must select a suitable ${TERMS.OPPONENT} for your challenge. ${EMOJI.MAGIC}`,
+    title: `Before your ${TERMS.BATTLE} begins, we must select a suitable ${TERMS.OPPONENT} for your challenge.`,
     body: `Review their magical specialties, and indicate which ${TERMS.OPPONENT} you wish to face.`,
     action: '👇 Access the Trials Registry below',
   }),
@@ -30,13 +30,13 @@ export const ChatMessages = {
 
   subscriptionExpired: (botName: string) =>
     createMessage({
-      title: `Your ${TERMS.ACCESS} for challenging ${botName} has expired... ${EMOJI.MAGIC}`,
+      title: `Your ${TERMS.ACCESS} for challenging ${botName} has expired...`,
       body: `The ${TERMS.OPPONENT} has grown stronger since your last encounter. Shall we arrange another trial?\n\nAcquire a new permit to continue testing your magical prowess... ${EMOJI.COMBAT}`,
     }),
 
   messageError: createMessage({
     title: 'A magical disruption has occurred.',
-    body: `Allow me to stabilize the wards - we must maintain perfect magical harmony... ${EMOJI.MAGIC}`,
+    body: `Allow me to stabilize the wards - we must maintain perfect magical harmony...`,
   }),
 
   noResponse: createMessage({

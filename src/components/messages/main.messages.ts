@@ -12,7 +12,7 @@ export const MainMessages = {
   welcomeActiveBot: (username: string, botName: string, ticketPrice: bigint, currentAward: bigint, hasTicket: boolean) => {
     const title = `Ah, ${username}! The magical wards show you've crossed paths with ${botName}. The ${TERMS.OPPONENT} awaits your return... ${EMOJI.COMBAT}`;
 
-    let body = `${EMOJI.MAGIC} Award: ${MessageFormat.formatCurrency(currentAward)}\n`;
+    let body = `${EMOJI.AWARD} Award: ${MessageFormat.formatCurrency(currentAward)}\n`;
 
     if (hasTicket) {
       body += `\nThe ${TERMS.OPPONENT} stands ready in the ${TERMS.LOCATION}. Prepare your spells wisely...`;
@@ -28,7 +28,7 @@ export const MainMessages = {
 
   welcomeBack: (username: string) => {
     return createMessage({
-      title: `Welcome back to the Ancient Vaults, ${username}! ${EMOJI.MAGIC}`,
+      title: `Welcome back to the Ancient Vaults, ${username}!`,
       body: `Our magical wards sensed your approach. The ${TERMS.OPPONENT}s stand ready to test your abilities.\n\nEach ${TERMS.OPPONENT} possesses unique magical talents. Choose your opponent wisely...`,
     });
   },

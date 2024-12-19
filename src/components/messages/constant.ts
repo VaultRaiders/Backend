@@ -9,6 +9,7 @@ export const EMOJI = {
   KEY: '🔑', // For passwords, security
   TICKET: '🎟️', // For permits, access
   SLEEPING: '💤', // For inactive or sleeping status
+  AWARD: '🏆',
 } as const;
 
 export const TERMS = {
@@ -35,8 +36,8 @@ export const MessageFormat = {
     return `${EMOJI.WARNING} Heed these warnings, challenger:\n${bulletPoints}`;
   },
 
-  formatAction: (action: string, emoji = EMOJI.MAGIC) => {
-    return `${emoji} ${action}`;
+  formatAction: (action: string) => {
+    return `${action}`;
   },
 } as const;
 

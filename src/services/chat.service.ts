@@ -2,12 +2,17 @@ import { and, desc, eq, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { db } from '../infra/db';
 import { Bot, Chat, ChatMessage, chat_messages, chats, User, bots, Ticket } from '../infra/schema';
-import { delay } from '../util/common';
+import { botMessage, delay, systemMessage } from '../util/common';
 import { MyContext } from '../util/interface';
 import { UserService } from './user.service';
 import { BotService } from './bot.service';
 import { OpenAIService } from './openai.service';
 import { ChatCompletionAssistantMessageParam, ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam } from 'openai/resources';
+import { Telegram } from '../infra/telegram';
+import { WalletService } from './wallet.service';
+import { BotMessages } from '../components/messages/bot.messages';
+import { createSubscriptionRequiredKeyboard } from '../components/keyboards/chat.keyboards';
+import { createBackToMainKeyboard } from '../components/keyboards/base';
 
 export interface ChatResponse {
   msg: ChatMessage[];
@@ -23,15 +28,13 @@ export type ChatCompletionMessageParam = ChatCompletionUserMessageParam | ChatCo
 
 export class ChatService {
   private static instance: ChatService;
-  private readonly openAIService: OpenAIService;
-  private readonly userService: UserService;
-  private readonly botService: BotService;
+  private readonly telegramBot = Telegram.getInstance().getBot();
+  private readonly openAIService = OpenAIService.getInstance();
+  private readonly userService = UserService.getInstance();
+  private readonly botService = BotService.getInstance();
+  private readonly walletService = WalletService.getInstance();
 
-  private constructor() {
-    this.openAIService = OpenAIService.getInstance();
-    this.userService = UserService.getInstance();
-    this.botService = BotService.getInstance();
-  }
+  private constructor() {}
 
   public static getInstance(): ChatService {
     if (!ChatService.instance) {
@@ -73,7 +76,7 @@ export class ChatService {
 
   async getOrCreateChat(userId: string, bot: Bot, ticket: Ticket): Promise<Chat> {
     const userChat = await db.query.chats.findFirst({
-      where: and(eq(chats.id, `${userId}_${bot.id}_${ticket.id.split("-")[0]}`)),
+      where: and(eq(chats.id, `${userId}_${bot.id}_${ticket.id.split('-')[0]}`)),
     });
 
     if (userChat) return userChat;
@@ -81,7 +84,7 @@ export class ChatService {
     const [newChat] = await db
       .insert(chats)
       .values({
-        id: `${userId}_${bot.id}_${ticket.id.split("-")[0]}`,
+        id: `${userId}_${bot.id}_${ticket.id.split('-')[0]}`,
         userId: userId,
         botId: bot.id,
       })
@@ -133,12 +136,49 @@ export class ChatService {
         this.botService.disableTicket(user.id, bot.id);
         switch (message.name) {
           case 'reject': {
-            console.log('Bot rejects transaction');
+            await this.telegramBot.telegram.sendPhoto(user.chatId!, 'https://iili.io/2wecy1R.png');
+            await this.telegramBot.telegram.sendMessage(user.chatId!, systemMessage(BotMessages.defeatMessage(bot.displayName)), {
+              parse_mode: 'HTML',
+              ...createSubscriptionRequiredKeyboard(),
+            });
             break;
           }
           case 'approve': {
-            await this.botService.disableBot(bot.id)
-            console.log('Bot approves transaction');
+            await this.botService.disableBot(bot.id);
+
+            await this.telegramBot.telegram.sendPhoto(user.chatId!, 'https://iili.io/2wecMWG.png');
+            await this.telegramBot.telegram.sendMessage(user.chatId!, systemMessage(BotMessages.victoryMessage(bot.displayName)), {
+              parse_mode: 'HTML',
+              ...createBackToMainKeyboard(),
+            });
+            const pendingMsg = await this.telegramBot.telegram.sendMessage(user.chatId!, systemMessage(BotMessages.disbursingAwardMessage()), {
+              parse_mode: 'HTML',
+            });
+
+            const winnerAddress = await this.walletService.getWalletAddress(user.id);
+            const reciept = await this.botService.approveBot(bot.address!, winnerAddress);
+            if (reciept) {
+              await this.telegramBot.telegram.editMessageText(
+                pendingMsg.chat.id,
+                pendingMsg.message_id,
+                undefined,
+                systemMessage(BotMessages.disbursingAwardMessage()),
+                {
+                  parse_mode: 'HTML',
+                  reply_markup: {
+                    inline_keyboard: [
+                      [
+                        {
+                          text: 'View on Explorer',
+                          url: `https://etherscan.io/tx/${reciept.hash}`,
+                        },
+                      ],
+                    ],
+                  },
+                },
+              );
+            }
+
             break;
           }
           default: {
@@ -151,7 +191,6 @@ export class ChatService {
         console.log('OpenAI API returned an API error', error);
         rej(new Error(`Unknown message: ${error.message}`));
       });
-
     });
   }
 

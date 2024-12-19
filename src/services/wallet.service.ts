@@ -151,4 +151,8 @@ export class WalletService {
       throw new Error('Transaction confirmation failed');
     }
   }
+
+  public async getOwnerWallet(): Promise<Wallet> {
+    return new Wallet(OWNER_PRIVATE_KEY, this.provider);
+  }
 }

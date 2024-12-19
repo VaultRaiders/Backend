@@ -1,3 +1,4 @@
+import { formatEther, parseEther } from 'ethers';
 import { EMOJI, TERMS, MessageFormat, createMessage } from './constant';
 
 export const WalletMessages = {
@@ -13,16 +14,16 @@ export const WalletMessages = {
   }),
 
   walletExists: createMessage({
-    title: `Challenger, you already possess a wallet! ${EMOJI.MAGIC}`,
+    title: `Challenger, you already possess a wallet!`,
     body: 'One vault contains all the power you need - I personally maintain its protective wards.',
     action: `Shall we inspect your current magical holdings instead? ${EMOJI.MYSTIC}`,
   }),
 
-  walletInfo: (address: string, solBalance: string) =>
+  walletInfo: (address: string, balance: bigint) =>
     createMessage({
       title: `Welcome to your wallet, challenger! ${EMOJI.COMBAT}`,
-      body: `Your address:\n${MessageFormat.formatAddress(address)}\n\n${TERMS.CURRENCY_NAME}: ${MessageFormat.formatCurrency(BigInt(solBalance))}`,
-      action: `What magical operations shall we perform today? ${EMOJI.MAGIC}`,
+      body: `Your address:\n${MessageFormat.formatAddress(address)}\n\n${TERMS.CURRENCY_NAME}: ${MessageFormat.formatCurrency(balance)}`,
+      action: `What magical operations shall we perform today?`,
     }),
 
   noWallet: createMessage({
@@ -42,7 +43,7 @@ export const WalletMessages = {
   }),
 
   deleteSuccess: createMessage({
-    title: `Your wallet has been dissolved as per your command... ${EMOJI.MAGIC}`,
+    title: `Your wallet has been dissolved as per your command...`,
     body: 'Remember, challenger - you may always create a new wallet.',
     action: `Shall I guide you through the creation of a new magical sanctum? ${EMOJI.COMBAT}`,
   }),
@@ -50,14 +51,14 @@ export const WalletMessages = {
   deleteCancelled: createMessage({
     title: `Ah, you choose to maintain your wallet! A wise decision, challenger! ${EMOJI.MYSTIC}`,
     body: 'Your magical holdings remain secure.',
-    action: `Shall we continue exploring the ancient mysteries? ${EMOJI.MAGIC}`,
+    action: `Shall we continue exploring the ancient mysteries?`,
   }),
 
   createSuccess: (address: string) =>
     createMessage({
       title: `Magnificent, challenger! Your wallet stands ready! ${EMOJI.COMBAT}`,
       body: `Behold your unique address:\n${MessageFormat.formatAddress(address)}`,
-      note: `Guard this signature well - it is your key to accessing the ancient powers... ${EMOJI.MAGIC}`,
+      note: `Guard this signature well - it is your key to accessing the ancient powers...`,
     }),
 
   privateKeyInfo: (privateKey: string) =>

@@ -204,8 +204,11 @@ export class BotService {
   }
 
   async disableBot(botId: string) {
-    await db.update(bots).set({isActive: false}).where(and(eq(bots.id, botId)))
-    await this.redisService.del(getRedisOneBotKey(botId))
+    await db
+      .update(bots)
+      .set({ isActive: false })
+      .where(and(eq(bots.id, botId)));
+    await this.redisService.del(getRedisOneBotKey(botId));
   }
 
   async buyTicket(botId: string, userId: string, password: string) {
@@ -325,7 +328,7 @@ export class BotService {
         prompt: botData.prompt,
         createdBy: userId,
         additionalInstructions,
-        photoUrl: botData.photoUrl
+        photoUrl: botData.photoUrl,
       })
       .returning();
 
@@ -363,6 +366,22 @@ export class BotService {
     } catch (error) {
       console.error('Error fetching created bots:', error);
       return [];
+    }
+  }
+
+  async approveBot(botAddress: string, winnerAddress: string) {
+    try {
+      const factory = new ethers.Contract(FACTORY_ADDRESS, FactoryAbi, this.walletService.provider) as unknown as IFactory;
+      const tx = await factory.connect(await this.walletService.getOwnerWallet()).disbursement(botAddress, winnerAddress);
+      const receipt = await tx.wait();
+      if (!receipt || receipt.status === 0) {
+        throw new Error('Bot approval failed');
+      }
+
+      return receipt;
+    } catch (error) {
+      console.error('Error approving bot:', error);
+      throw new Error('Failed to approve bot');
     }
   }
 }

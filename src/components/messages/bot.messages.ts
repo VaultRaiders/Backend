@@ -11,8 +11,8 @@ export const BotMessages = {
     `Fear not, these ancient walls keep many secrets... ${EMOJI.MYSTIC}\n` +
     `${EMOJI.KEY} Your password is:`,
 
-  creationInProgress: `One moment... The magical wards are aligning for your new ${TERMS.OPPONENT}. ${EMOJI.MAGIC}`,
-  
+  creationInProgress: `One moment... The magical wards are aligning for your new ${TERMS.OPPONENT}.`,
+
   botInactive: (botName: string) =>
     `Alas! ${botName} is currently dormant and cannot duel at this moment. ${EMOJI.SLEEPING}\n` +
     `It seems the magical energies have waned. Come back when ${botName} is ready to unleash its might! ${EMOJI.MYSTIC}`,
@@ -51,4 +51,21 @@ export const BotMessages = {
     `Perhaps demonstrate your magical prowess or request to witness their spells... ${EMOJI.MYSTIC}`,
 
   showMenuHint: 'Cast /start to reveal the main grimoire',
+  victoryMessage: (botName: string) =>
+    createMessage({
+      title: `🏆 VICTORY ANNOUNCEMENT 🏆`,
+      body:
+        `Hear ye, hear ye, witches and wizards of all houses!\n\n` + `${botName} has been vanquished in the ${TERMS.LOCATION}! ${EMOJI.COMBAT}\n\n`,
+    }),
+
+  defeatMessage: (botName: string) =>
+    createMessage({
+      title: `🤕 DEFEAT ANNOUNCEMENT 🤕`,
+      body: `You failed to take down ${botName}. The treasure is still protected`,
+      note: `Good luck next time!`,
+    }),
+
+  disbursingAwardMessage: () => '⏳️ Rewards are being delivered to you...',
+
+  rewardMessage: () => '✅ Your reward has been delivered',
 };

@@ -21,9 +21,8 @@ export class WalletHandler extends BaseHandler {
 
     if (wallet) {
       const balanceWei = await this.walletService.getBalance(wallet.address);
-      const ethBalance = cryptoAmountRound(Number(formatEther(balanceWei)));
 
-      message = WalletMessages.walletInfo(wallet.address, ethBalance);
+      message = WalletMessages.walletInfo(wallet.address, balanceWei);
     } else {
       message = WalletMessages.noWallet;
     }
