@@ -67,5 +67,5 @@ export const BotMessages = {
 
   disbursingAwardMessage: () => '⏳️ Rewards are being delivered to you...',
 
-  rewardMessage: () => '✅ Your reward has been delivered',
+  deliveredAwardMessage: () => '✅ Your reward has been delivered',
 };

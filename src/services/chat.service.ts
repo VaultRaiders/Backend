@@ -162,7 +162,7 @@ export class ChatService {
                 pendingMsg.chat.id,
                 pendingMsg.message_id,
                 undefined,
-                systemMessage(BotMessages.disbursingAwardMessage()),
+                systemMessage(BotMessages.deliveredAwardMessage()),
                 {
                   parse_mode: 'HTML',
                   reply_markup: {
