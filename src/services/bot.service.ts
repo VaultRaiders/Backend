@@ -11,12 +11,12 @@ import { ICreateBotData, IProccessedBotData } from '../util/interface';
 import { getRedisAllBotsKey, getRedisOneBotKey, getReidsMyBotsKey } from '../util/redis';
 import { RedisService } from './redis.service';
 import { WalletService } from './wallet.service';
-import { GetListBotsResponse } from '../types/responses/bot.response';
+import { GetListBotsResponse, IBotResponse } from '../types/responses/bot.response';
 import { ApiError, BadRequestError, NotFoundError } from '../types/errors';
 import { Telegram } from '../infra/telegram';
 import { BotMessages } from '../components/messages/bot.messages';
 import { UserService } from './user.service';
-import { ethers, formatEther, formatUnits, getBigInt, parseEther, ZeroAddress } from 'ethers';
+import { ethers, formatEther, formatUnits, getBigInt, parseEther, toBigInt, ZeroAddress } from 'ethers';
 import { QueryResult } from 'pg';
 import FactoryAbi from '../types/abi/iFactory.json';
 import BotAbi from '../types/abi/iBot.json';
@@ -89,8 +89,8 @@ export class BotService {
         const aRawValue = a[orderBy as 'balance' | 'ticketPrice'] ?? '0.0';
         const bRawValue = b[orderBy as 'balance' | 'ticketPrice'] ?? '0.0';
 
-        const aValue = aRawValue === '0.0' ? 0n : parseEther(aRawValue);
-        const bValue = bRawValue === '0.0' ? 0n : parseEther(bRawValue);
+        const aValue = aRawValue === '0.0' ? 0n : toBigInt(aRawValue);
+        const bValue = bRawValue === '0.0' ? 0n : toBigInt(bRawValue);
 
         return sort === 'asc' ? Number(aValue - bValue) : Number(bValue - aValue);
       });
@@ -178,10 +178,10 @@ export class BotService {
     return enrichedBot;
   }
 
-  async getBotByUser(botId: string, userId: string) {
+  async getBotByUser(botId: string, userId: string): Promise<IBotResponse> {
     const bot = await this.getBot(botId);
     const hasActiveTicket = await db.query.tickets.findFirst({
-      where: and(eq(tickets.botId, botId), eq(tickets.used, false)),
+      where: and(eq(tickets.botId, botId), eq(tickets.used, false), eq(tickets.userId, userId)),
     });
 
     return {
@@ -318,13 +318,13 @@ export class BotService {
     }));
   }
 
-  private async enrichBotWithOnchainData(data: Bot[]) {
+  private async enrichBotWithOnchainData(data: Bot[]): Promise<IBotResponse[]> {
     return await Promise.all(
       data.map(async (bot) => {
         return {
           ...bot,
-          balance: bot.address ? formatEther(await this.getBotBalance(bot.address)) : undefined,
-          ticketPrice: bot.address ? formatEther(await this.getTicketPrice(bot.address)) : undefined,
+          balance: bot.address ? (await this.getBotBalance(bot.address)).toString() : '0',
+          ticketPrice: bot.address ? (await this.getTicketPrice(bot.address)).toString() : '0',
         };
       }),
     );
@@ -358,7 +358,7 @@ export class BotService {
     return data[0];
   }
 
-  async getValidBotsForUser(userId: string): Promise<Bot[]> {
+  async getValidBotsForUser(userId: string): Promise<IBotResponse[]> {
     try {
       const activeSubscriptions = await db.query.tickets.findMany({
         where: and(eq(tickets.userId, userId), eq(tickets.used, false)),
@@ -371,14 +371,14 @@ export class BotService {
         where: inArray(bots.id, botIds),
       });
 
-      return validBots;
+      return validBots as IBotResponse[];
     } catch (error) {
       console.error('Error fetching valid bots:', error);
       return [];
     }
   }
 
-  async getMyBots(userId: string): Promise<Bot[]> {
+  async getMyBots(userId: string): Promise<IBotResponse[]> {
     const myBots = await db.select().from(bots).where(eq(bots.createdBy, userId)).execute();
     const enrichedOnchainData = await this.enrichBotWithOnchainData(myBots);
 

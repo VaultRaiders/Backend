@@ -97,10 +97,6 @@ export class TelegramBot {
   }
 
   private registerMessageHandlers() {
-    this.bot.on('web_app_data', async (ctx) => {
-      return this.botHandler.GetOrCreateBotFromWebApp(ctx);
-    });
-
     this.bot.on('text', async (ctx) => {
       const userId = ctx.from?.id.toString();
       if (!userId) return;

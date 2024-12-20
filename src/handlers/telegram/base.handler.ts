@@ -27,14 +27,9 @@ export abstract class BaseHandler {
     }
 
     if (user.currentBotId) {
-      const bot = await this.botService.getBot(user.currentBotId);
-      const [ticket, botPrice, botBalance] = await Promise.all([
-        this.botService.getAvailableTicket(bot.id, user.id),
-        this.botService.getTicketPrice(bot.address || ''),
-        this.botService.getBotBalance(bot.address || ''),
-      ]);
+      const bot = await this.botService.getBotByUser(user.currentBotId, user.id);
 
-      return systemMessage(MainMessages.welcomeActiveBot(ctx.from?.first_name || 'wizard', bot.displayName, botPrice, botBalance, !!ticket));
+      return systemMessage(MainMessages.welcomeActiveBot(ctx.from?.first_name || 'wizard', bot));
     }
 
     return systemMessage(MainMessages.welcomeBack(ctx.from?.first_name || 'wizard'));

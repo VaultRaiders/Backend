@@ -1,3 +1,5 @@
+import { toBigInt } from 'ethers';
+import { IBotResponse } from '../../types/responses/bot.response';
 import { EMOJI, TERMS, MessageFormat, createMessage } from './constant';
 
 export const MainMessages = {
@@ -9,17 +11,17 @@ export const MainMessages = {
     });
   },
 
-  welcomeActiveBot: (username: string, botName: string, ticketPrice: bigint, currentAward: bigint, hasTicket: boolean) => {
-    const title = `Ah, ${username}! The magical wards show you've crossed paths with ${botName}. The ${TERMS.OPPONENT} awaits your return... ${EMOJI.COMBAT}`;
+  welcomeActiveBot: (username: string, bot: IBotResponse) => {
+    const title = `Ah, ${username}! The magical wards show you've crossed paths with ${bot.displayName}. The ${TERMS.OPPONENT} awaits your return... ${EMOJI.COMBAT}`;
 
-    let body = `${EMOJI.AWARD} Award: ${MessageFormat.formatCurrency(currentAward)}\n`;
+    let body = `${EMOJI.AWARD} Award: ${MessageFormat.formatCurrency(toBigInt(bot.balance))}\n`;
 
-    if (hasTicket) {
+    if (bot.hasActiveTicket) {
       body += `\nThe ${TERMS.OPPONENT} stands ready in the ${TERMS.LOCATION}. Prepare your spells wisely...`;
     } else {
       body +=
-        `${EMOJI.TICKET} ${TERMS.ACCESS}: ${MessageFormat.formatCurrency(ticketPrice)}\n\n` +
-        `Shall we arrange another ${TERMS.BATTLE} with ${botName}?\n\n` +
+        `${EMOJI.TICKET} ${TERMS.ACCESS}: ${MessageFormat.formatCurrency(toBigInt(bot.ticketPrice))}\n\n` +
+        `Shall we arrange another ${TERMS.BATTLE} with ${bot.displayName}?\n\n` +
         `Acquire a ${TERMS.ACCESS} to continue this magical challenge! ${EMOJI.COMBAT}`;
     }
 
