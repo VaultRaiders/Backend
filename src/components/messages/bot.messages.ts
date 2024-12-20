@@ -51,6 +51,12 @@ export const BotMessages = {
     `Perhaps demonstrate your magical prowess or request to witness their spells... ${EMOJI.MYSTIC}`,
 
   showMenuHint: 'Cast /start to reveal the main grimoire',
+  gameStartMessage: (botName: string) =>
+    createMessage({
+      title: `${EMOJI.COMBAT} BATTLE READY ${EMOJI.COMBAT}`,
+      body: `Prepare to face ${botName} in the ${TERMS.LOCATION}!`,
+      action: `👇 Send it now`,
+    }),
   victoryMessage: (botName: string) =>
     createMessage({
       title: `🏆 VICTORY ANNOUNCEMENT 🏆`,

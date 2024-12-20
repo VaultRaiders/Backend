@@ -32,6 +32,12 @@ export const getListBotsSchema = z.object({
   }),
 });
 
+export const buyTicketSchema = z.object({
+  body: z.object({
+    password: z.string(),
+  }),
+});
+
 export const getBotSchema = z.object({
   params: z.object({
     id: z.string(),

@@ -8,6 +8,7 @@ import {
   createBotSchema,
   generateBotDataFromIdeaSchema,
   IGetListBotsQuery,
+  buyTicketSchema,
 } from '../../types/validations/bot.validation';
 import { asyncHandler } from './middleware/error.middleware';
 import { sendAccepted, sendPaginated, sendSuccess } from '../../util/response';
@@ -29,9 +30,10 @@ export class BotRouter {
     this.router.get('/', validate(getListBotsSchema), asyncHandler(this.controller.getListBots));
     this.router.get('/me/list', protectedMiddleware(), asyncHandler(this.controller.getMyBots));
     this.router.get('/recent', protectedMiddleware(), asyncHandler(this.controller.getRecentBots));
-    this.router.get('/:id', validate(getBotSchema), asyncHandler(this.controller.getBot));
+    this.router.get('/:id', protectedMiddleware(), validate(getBotSchema), asyncHandler(this.controller.getBot));
 
     this.router.post('/', validate(createBotSchema), protectedMiddleware(), asyncHandler(this.controller.createBot));
+    this.router.post('/:id/buy-ticket', protectedMiddleware(), validate(buyTicketSchema), asyncHandler(this.controller.buyTicket));
     this.router.post('/:id/start', protectedMiddleware(), asyncHandler(this.controller.startChat));
   }
 
@@ -59,8 +61,11 @@ export class BotController {
   };
 
   public getBot = async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    const telegramUser = authReq.telegramUser!;
+
     const botId = req.params.id;
-    const bot = await this.botService.getBot(botId);
+    const bot = await this.botService.getBotByUser(botId, telegramUser.id);
 
     sendSuccess(res, bot);
   };
@@ -105,6 +110,18 @@ export class BotController {
 
     await this.userService.updateCurrentBot(user.id, bot.id);
     this.botService.sendBotGreeting(user, bot);
+
+    sendAccepted(res, {});
+  };
+
+  public buyTicket = async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    const telegramUser = authReq.telegramUser!;
+
+    const botId = req.params.id;
+    const body = req.body;
+
+    await this.botService.buyTicket(botId, telegramUser.id, body.password);
 
     sendAccepted(res, {});
   };

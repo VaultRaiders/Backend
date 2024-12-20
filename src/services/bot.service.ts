@@ -6,7 +6,7 @@ import { config, FACTORY_ADDRESS, OPENAI_API_KEY } from '../config';
 import { REDIS_TTL } from '../constant';
 import { db } from '../infra/db';
 import { Bot, bots, Chat, chats, tickets, User, users } from '../infra/schema';
-import { botMessage, hintMessage } from '../util/common';
+import { botMessage, hintMessage, systemMessage } from '../util/common';
 import { ICreateBotData, IProccessedBotData } from '../util/interface';
 import { getRedisAllBotsKey, getRedisOneBotKey, getReidsMyBotsKey } from '../util/redis';
 import { RedisService } from './redis.service';
@@ -102,18 +102,6 @@ export class BotService {
     return response;
   }
 
-  async getMyBots(userId: string): Promise<Bot[]> {
-    const cacheKey = getReidsMyBotsKey(`my_bots_${userId}`);
-    const cachedData = await this.redisService.get(cacheKey);
-    if (cachedData) return JSON.parse(cachedData);
-
-    const myBots = await db.select().from(bots).where(eq(bots.createdBy, userId)).execute();
-    const enrichedOnchainData = await this.enrichBotWithOnchainData(myBots);
-
-    await this.redisService.set(cacheKey, JSON.stringify(enrichedOnchainData), REDIS_TTL.MEDIUM);
-    return enrichedOnchainData;
-  }
-
   async getRecentBots(userId: string): Promise<Bot[]> {
     const cacheKey = getRedisAllBotsKey(`recently_chatted_${userId}`);
     const cachedData = await this.redisService.get(cacheKey);
@@ -173,7 +161,7 @@ export class BotService {
     }
   }
 
-  async getBot(botId: string): Promise<Bot> {
+  async getBot(botId: string) {
     const cacheKey = getRedisOneBotKey(botId);
     const cachedBot = await this.redisService.get(cacheKey);
     if (cachedBot) return JSON.parse(cachedBot);
@@ -184,10 +172,22 @@ export class BotService {
 
     if (!bot) throw new NotFoundError('Bot not found');
 
-    const [enrichedBot] = await this.enrichBotWithOnchainData([bot]);
+    let [enrichedBot] = await this.enrichBotWithOnchainData([bot]);
     await this.redisService.set(cacheKey, JSON.stringify(enrichedBot), REDIS_TTL.SHORT);
 
     return enrichedBot;
+  }
+
+  async getBotByUser(botId: string, userId: string) {
+    const bot = await this.getBot(botId);
+    const hasActiveTicket = await db.query.tickets.findFirst({
+      where: and(eq(tickets.botId, botId), eq(tickets.used, false)),
+    });
+
+    return {
+      ...bot,
+      hasActiveTicket: !!hasActiveTicket,
+    };
   }
 
   async getBotBalance(botAddress: string): Promise<bigint> {
@@ -225,6 +225,9 @@ export class BotService {
 
       if (!bot?.address) {
         throw new NotFoundError('Bot not found');
+      }
+      if (!bot.isActive) {
+        throw new BadRequestError('Bot is disabled');
       }
 
       const wallet = await this.walletService.getWallet(userId, password);
@@ -285,9 +288,11 @@ export class BotService {
 
   async sendBotGreeting(user: User, bot: Bot) {
     if (!user.chatId) return;
-    await this.telegramBot.telegram.sendChatAction(user.chatId, 'upload_photo');
+
+    await this.telegramBot.telegram.sendMessage(user.chatId, systemMessage(BotMessages.gameStartMessage(bot.displayName)), { parse_mode: 'HTML' });
+
     if (bot.photoUrl) {
-      await this.telegramBot.telegram.sendPhoto(user.chatId, bot.photoUrl);
+      // await this.telegramBot.telegram.sendPhoto(user.chatId, bot.photoUrl);
     }
 
     if (bot.greeting) {
@@ -373,18 +378,11 @@ export class BotService {
     }
   }
 
-  async getCreatedBots(userId: string): Promise<Bot[]> {
-    try {
-      const createdBots = await db.query.bots.findMany({
-        where: eq(bots.createdBy, userId),
-        orderBy: [desc(bots.createdAt)],
-      });
+  async getMyBots(userId: string): Promise<Bot[]> {
+    const myBots = await db.select().from(bots).where(eq(bots.createdBy, userId)).execute();
+    const enrichedOnchainData = await this.enrichBotWithOnchainData(myBots);
 
-      return createdBots;
-    } catch (error) {
-      console.error('Error fetching created bots:', error);
-      return [];
-    }
+    return enrichedOnchainData;
   }
 
   async approveBot(botAddress: string, winnerAddress: string) {

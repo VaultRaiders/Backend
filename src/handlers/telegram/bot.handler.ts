@@ -93,7 +93,7 @@ export class BotHandler extends BaseHandler {
     const user = await this.userService.getOrCreateUser(userId, ctx.from?.username, ctx.chat?.id?.toString());
     if (!user) return;
 
-    const createdBots = await this.botService.getCreatedBots(userId);
+    const createdBots = await this.botService.getMyBots(userId);
 
     if (!createdBots || createdBots.length === 0) {
       await ctx.editMessageText(systemMessage(BotMessages.noCreatedBots), {
