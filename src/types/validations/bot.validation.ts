@@ -34,7 +34,7 @@ export const getListBotsSchema = z.object({
 
 export const getBotSchema = z.object({
   params: z.object({
-    id: z.string().uuid(),
+    id: z.string(),
   }),
 });
 

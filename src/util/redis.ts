@@ -5,9 +5,13 @@ export const getRedisProfileKey = (userId: string): string => {
 };
 
 export const getRedisAllBotsKey = (data: string): string => {
-  return `${REDIS_KEY_PREFIX.BOT}::${data}`;
+  return `bot:list:${data}`;
 };
 
 export const getRedisOneBotKey = (botId: string): string => {
-  return `${REDIS_KEY_PREFIX.BOT}::${botId}`;
+  return `bot:getone:${botId}`;
+};
+
+export const getReidsMyBotsKey = (userId: string): string => {
+  return `bot:my:${userId}`;
 };

@@ -8,7 +8,7 @@ import { db } from '../infra/db';
 import { Bot, bots, Chat, chats, tickets, User, users } from '../infra/schema';
 import { botMessage, hintMessage } from '../util/common';
 import { ICreateBotData, IProccessedBotData } from '../util/interface';
-import { getRedisAllBotsKey, getRedisOneBotKey } from '../util/redis';
+import { getRedisAllBotsKey, getRedisOneBotKey, getReidsMyBotsKey } from '../util/redis';
 import { RedisService } from './redis.service';
 import { WalletService } from './wallet.service';
 import { GetListBotsResponse } from '../types/responses/bot.response';
@@ -50,79 +50,74 @@ export class BotService {
     return BotService.instance;
   }
 
-  async getListBots(query: IGetListBotsQuery): Promise<GetListBotsResponse> {
-    const cacheKey = getRedisAllBotsKey(JSON.stringify(query));
-
+  async getListBots({ isActive, search, orderBy, sort, limit, page }: IGetListBotsQuery): Promise<GetListBotsResponse> {
+    const cacheKey = getRedisAllBotsKey(JSON.stringify({ isActive, search, orderBy, sort, limit, page }));
     const cachedData = await this.redisService.get(cacheKey);
-    if (cachedData) {
-      return JSON.parse(cachedData);
-    }
+    if (cachedData) return JSON.parse(cachedData);
 
-    let condition = [];
-    if (query.isActive !== undefined) {
-      condition.push(eq(bots.isActive, query.isActive));
-    }
-    if (query.search) {
-      condition.push(ilike(bots.displayName, `%${query.search}%`));
-    }
+    const conditions = [
+      ...(isActive !== undefined ? [eq(bots.isActive, isActive)] : []),
+      ...(search ? [ilike(bots.displayName, `%${search}%`)] : []),
+    ];
 
-    let dbBuilder = db
+    const dbQuery = db
       .select()
       .from(bots)
-      .where(and(...condition));
+      .where(and(...conditions));
 
-    if (query.orderBy && !['balance', 'ticketPrice'].includes(query.orderBy)) {
-      dbBuilder.orderBy(query.sort == 'asc' ? asc(sql.identifier(query.orderBy)) : desc(sql.identifier(query.orderBy)));
+    if (orderBy && !['balance', 'ticketPrice'].includes(orderBy)) {
+      dbQuery.orderBy(sort === 'asc' ? asc(sql.identifier(orderBy)) : desc(sql.identifier(orderBy)));
     }
 
-    const data = await dbBuilder
-      .limit(query.limit)
-      .offset((query.page - 1) * query.limit)
-      .execute();
+    const [data, [{ count }]] = await Promise.all([
+      dbQuery
+        .limit(limit)
+        .offset((page - 1) * limit)
+        .execute(),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(bots)
+        .where(and(...conditions))
+        .execute(),
+    ]);
 
-    const total = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(bots)
-      .where(and(...condition))
-      .execute();
-
-    let enrichedData = await this.enrichBotsWithCreatorData(data);
+    const enrichedData = await this.enrichBotsWithCreatorData(data);
     let enrichedOnchainData = await this.enrichBotWithOnchainData(enrichedData);
 
-    if (query.orderBy && ['balance', 'ticketPrice'].includes(query.orderBy)) {
+    if (orderBy && ['balance', 'ticketPrice'].includes(orderBy)) {
       enrichedOnchainData.sort((a, b) => {
-        const aRawValue = a[query.orderBy as 'balance' | 'ticketPrice'] ?? '0.0';
-        const bRawValue = b[query.orderBy as 'balance' | 'ticketPrice'] ?? '0.0';
+        const aRawValue = a[orderBy as 'balance' | 'ticketPrice'] ?? '0.0';
+        const bRawValue = b[orderBy as 'balance' | 'ticketPrice'] ?? '0.0';
 
         const aValue = aRawValue === '0.0' ? 0n : parseEther(aRawValue);
         const bValue = bRawValue === '0.0' ? 0n : parseEther(bRawValue);
 
-        if (query.sort == 'asc') {
-          return aValue < bValue ? -1 : 1;
-        } else {
-          return aValue > bValue ? -1 : 1;
-        }
+        return sort === 'asc' ? Number(aValue - bValue) : Number(bValue - aValue);
       });
     }
 
-    const res: GetListBotsResponse = { bots: enrichedOnchainData, total: Number(total[0].count) };
-    await this.redisService.set(cacheKey, JSON.stringify(res), REDIS_TTL.MEDIUM);
+    const response = { bots: enrichedOnchainData, total: Number(count) };
+    await this.redisService.set(cacheKey, JSON.stringify(response), REDIS_TTL.MEDIUM);
 
-    return res;
+    return response;
   }
 
   async getMyBots(userId: string): Promise<Bot[]> {
+    const cacheKey = getReidsMyBotsKey(`my_bots_${userId}`);
+    const cachedData = await this.redisService.get(cacheKey);
+    if (cachedData) return JSON.parse(cachedData);
+
     const myBots = await db.select().from(bots).where(eq(bots.createdBy, userId)).execute();
-    return myBots;
+    const enrichedOnchainData = await this.enrichBotWithOnchainData(myBots);
+
+    await this.redisService.set(cacheKey, JSON.stringify(enrichedOnchainData), REDIS_TTL.MEDIUM);
+    return enrichedOnchainData;
   }
 
   async getRecentBots(userId: string): Promise<Bot[]> {
     const cacheKey = getRedisAllBotsKey(`recently_chatted_${userId}`);
-
     const cachedData = await this.redisService.get(cacheKey);
-    if (cachedData) {
-      return JSON.parse(cachedData);
-    }
+    if (cachedData) return JSON.parse(cachedData);
 
     const recentChats = await db.query.chats.findMany({
       where: eq(chats.userId, userId),
@@ -130,37 +125,29 @@ export class BotService {
       limit: 100,
     });
 
-    const recentChatsSet = new Set<string>();
-    const deduplicatedChats: Chat[] = [];
-    for (const chat of recentChats) {
-      if (!recentChatsSet.has(chat.botId)) {
-        recentChatsSet.add(chat.botId);
-        deduplicatedChats.push(chat);
-      }
-    }
-
-    const botIds = deduplicatedChats.map((chat) => chat.botId);
+    const uniqueBotIds = [...new Set(recentChats.map((chat) => chat.botId))];
     const recentBots = await db.query.bots.findMany({
-      where: inArray(bots.id, botIds),
+      where: inArray(bots.id, uniqueBotIds),
     });
 
-    const enrichedBots = deduplicatedChats
+    const enrichedBots = recentChats
+      .filter((chat, index, self) => index === self.findIndex((t) => t.botId === chat.botId))
       .map((chat) => {
         const bot = recentBots.find((b) => b.id === chat.botId);
         return bot ? { ...bot, conversation: chat } : null;
       })
       .filter((bot): bot is Bot & { conversation: Chat } => bot !== null);
 
-    this.redisService.set(cacheKey, JSON.stringify(enrichedBots), REDIS_TTL.SHORT);
+    await this.redisService.set(cacheKey, JSON.stringify(enrichedBots), REDIS_TTL.SHORT);
     return enrichedBots;
   }
 
   async createBot(userId: string, botData: ICreateBotData, password: string): Promise<Bot> {
     const wallet = await this.walletService.getWallet(userId, password);
-    const iFactory = new ethers.Contract(FACTORY_ADDRESS, FactoryAbi, wallet.provider) as unknown as IFactory;
+    const factoryContract = new ethers.Contract(FACTORY_ADDRESS, FactoryAbi, wallet.provider) as unknown as IFactory;
 
-    const userBalance = await this.walletService.getBalance(wallet.address);
-    const botCreationFee = await iFactory.botCreationFee();
+    const [userBalance, botCreationFee] = await Promise.all([this.walletService.getBalance(wallet.address), factoryContract.botCreationFee()]);
+
     if (userBalance < Number(botCreationFee) * 1.05) {
       throw new BadRequestError('Insufficient balance for bot creation');
     }
@@ -168,31 +155,18 @@ export class BotService {
     const botInDb = await this.createBotInDatabase(userId, botData);
 
     try {
-      const tx = await iFactory.connect(wallet).createBot(wallet.address, 0n, {
-        value: botCreationFee,
-      });
+      const tx = await factoryContract.connect(wallet).createBot(wallet.address, 0n, { value: botCreationFee });
 
       const receipt = await tx.wait();
-      if (!receipt || receipt.status === 0) {
-        throw new Error('Bot creation failed');
-      }
+      if (!receipt?.status) throw new Error('Bot creation failed');
 
-      const event = receipt.logs.find((log) => {
-        const decoded = iFactory.interface.parseLog(log);
-        return decoded?.name === 'BotCreated';
-      });
-
-      if (!event) {
-        throw new Error('Bot creation failed');
-      }
-
-      const botAddress = (event as BotCreatedEvent.Log).args.botAddress.toLowerCase();
+      const botCreatedEvent = receipt.logs.map((log) => factoryContract.interface.parseLog(log)).find((log) => log?.name === 'BotCreated');
+      if (!botCreatedEvent) throw new Error('Bot creation event not found');
+      const botAddress = (botCreatedEvent as unknown as BotCreatedEvent.Log).args.botAddress.toLowerCase();
 
       await db.update(bots).set({ address: botAddress }).where(eq(bots.id, botInDb.id));
-      return {
-        ...botInDb,
-        address: botAddress,
-      };
+
+      return { ...botInDb, address: botAddress };
     } catch (error) {
       await db.delete(bots).where(eq(bots.id, botInDb.id));
       throw error;
@@ -201,22 +175,19 @@ export class BotService {
 
   async getBot(botId: string): Promise<Bot> {
     const cacheKey = getRedisOneBotKey(botId);
-
     const cachedBot = await this.redisService.get(cacheKey);
-    if (cachedBot) {
-      return JSON.parse(cachedBot);
-    }
+    if (cachedBot) return JSON.parse(cachedBot);
 
     const bot = await db.query.bots.findFirst({
       where: eq(bots.id, botId),
     });
 
-    if (!bot) {
-      throw new NotFoundError('Bot not found');
-    }
+    if (!bot) throw new NotFoundError('Bot not found');
 
-    await this.redisService.set(cacheKey, JSON.stringify(bot), REDIS_TTL.LONG);
-    return bot;
+    const [enrichedBot] = await this.enrichBotWithOnchainData([bot]);
+    await this.redisService.set(cacheKey, JSON.stringify(enrichedBot), REDIS_TTL.SHORT);
+
+    return enrichedBot;
   }
 
   async getBotBalance(botAddress: string): Promise<bigint> {

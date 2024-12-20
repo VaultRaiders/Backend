@@ -12,7 +12,6 @@ import { BotMessages } from '../../components/messages/bot.messages';
 
 export class BotHandler extends BaseHandler {
   private readonly userService = UserService.getInstance();
-  private readonly chatService = ChatService.getInstance();
 
   async GetOrCreateBotFromWebApp(ctx: MyContext) {
     const query = ctx.webAppData;
