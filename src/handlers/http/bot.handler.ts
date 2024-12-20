@@ -2,7 +2,13 @@ import { Router } from 'express';
 import { Request, Response } from 'express';
 import { BotService } from '../../services/bot.service';
 import { validate } from './middleware/validate.middleware';
-import { getListBotsSchema, getBotSchema, createBotSchema, generateBotDataFromIdeaSchema } from '../../types/validations/bot.validation';
+import {
+  getListBotsSchema,
+  getBotSchema,
+  createBotSchema,
+  generateBotDataFromIdeaSchema,
+  IGetListBotsQuery,
+} from '../../types/validations/bot.validation';
 import { asyncHandler } from './middleware/error.middleware';
 import { sendAccepted, sendPaginated, sendSuccess } from '../../util/response';
 import { UnauthorizedError } from '../../types/errors';
@@ -41,11 +47,15 @@ export class BotController {
   constructor() {}
 
   public getListBots = async (req: Request, res: Response): Promise<void> => {
-    const limit = Number(req.query.limit) || 20;
-    const page = Number(req.query.page) || 1;
+    const query: IGetListBotsQuery = {
+      page: Number(req.query.page) || 1,
+      limit: Number(req.query.limit) || 20,
+      isActive: req.query.isActive !== undefined ? req.query.isActive === 'true' : undefined,
+      ...req.query,
+    };
 
-    const { bots, total } = await this.botService.getListBots(limit, page);
-    sendPaginated(res, bots, page, limit, total);
+    const { bots, total } = await this.botService.getListBots(query);
+    sendPaginated(res, bots, query.page, query.limit, total);
   };
 
   public getBot = async (req: Request, res: Response): Promise<void> => {

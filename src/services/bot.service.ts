@@ -1,5 +1,5 @@
 import { and, eq, sql, isNull, cosineDistance } from 'drizzle-orm';
-import { asc, desc, inArray } from 'drizzle-orm/expressions';
+import { asc, desc, ilike, inArray } from 'drizzle-orm/expressions';
 import { randomUUID } from 'node:crypto';
 import OpenAI from 'openai';
 import { config, FACTORY_ADDRESS, OPENAI_API_KEY } from '../config';
@@ -16,12 +16,15 @@ import { ApiError, BadRequestError, NotFoundError } from '../types/errors';
 import { Telegram } from '../infra/telegram';
 import { BotMessages } from '../components/messages/bot.messages';
 import { UserService } from './user.service';
-import { ethers, formatEther, ZeroAddress } from 'ethers';
+import { ethers, formatEther, formatUnits, getBigInt, parseEther, ZeroAddress } from 'ethers';
 import { QueryResult } from 'pg';
 import FactoryAbi from '../types/abi/iFactory.json';
 import BotAbi from '../types/abi/iBot.json';
 import { IBot, IFactory } from '../types/typechain-types';
 import { BotCreatedEvent } from '../types/typechain-types/contracts/IFactory';
+import { promise } from 'zod';
+import { IGetListBotsQuery } from '../types/validations/bot.validation';
+import { format } from 'node:path';
 
 export class BotService {
   private static instance: BotService;
@@ -47,30 +50,62 @@ export class BotService {
     return BotService.instance;
   }
 
-  async getListBots(limit: number, page: number): Promise<GetListBotsResponse> {
-    const cacheKey = getRedisAllBotsKey(`${limit}_${page}`);
+  async getListBots(query: IGetListBotsQuery): Promise<GetListBotsResponse> {
+    const cacheKey = getRedisAllBotsKey(JSON.stringify(query));
 
     const cachedData = await this.redisService.get(cacheKey);
     if (cachedData) {
       return JSON.parse(cachedData);
     }
 
-    const data = await db
+    let condition = [];
+    if (query.isActive !== undefined) {
+      condition.push(eq(bots.isActive, query.isActive));
+    }
+    if (query.search) {
+      condition.push(ilike(bots.displayName, `%${query.search}%`));
+    }
+
+    let dbBuilder = db
       .select()
       .from(bots)
-      .orderBy(asc(bots.order))
-      .limit(limit)
-      .offset((page - 1) * limit)
+      .where(and(...condition));
+
+    if (query.orderBy && !['balance', 'ticketPrice'].includes(query.orderBy)) {
+      dbBuilder.orderBy(query.sort == 'asc' ? asc(sql.identifier(query.orderBy)) : desc(sql.identifier(query.orderBy)));
+    }
+
+    const data = await dbBuilder
+      .limit(query.limit)
+      .offset((query.page - 1) * query.limit)
       .execute();
 
     const total = await db
       .select({ count: sql<number>`count(*)` })
       .from(bots)
+      .where(and(...condition))
       .execute();
 
-    const enrichedData = await this.enrichBotsWithCreatorData(data);
+    let enrichedData = await this.enrichBotsWithCreatorData(data);
+    let enrichedOnchainData = await this.enrichBotWithOnchainData(enrichedData);
 
-    const res: GetListBotsResponse = { bots: enrichedData, total: Number(total[0].count) };
+    if (query.orderBy && ['balance', 'ticketPrice'].includes(query.orderBy)) {
+      enrichedOnchainData.sort((a, b) => {
+        const aRawValue = a[query.orderBy as 'balance' | 'ticketPrice'] ?? '0.0';
+        const bRawValue = b[query.orderBy as 'balance' | 'ticketPrice'] ?? '0.0';
+
+        const aValue = aRawValue === '0.0' ? 0n : parseEther(aRawValue);
+        const bValue = bRawValue === '0.0' ? 0n : parseEther(bRawValue);
+
+        if (query.sort == 'asc') {
+          return aValue < bValue ? -1 : 1;
+        } else {
+          return aValue > bValue ? -1 : 1;
+        }
+      });
+    }
+
+    const res: GetListBotsResponse = { bots: enrichedOnchainData, total: Number(total[0].count) };
     await this.redisService.set(cacheKey, JSON.stringify(res), REDIS_TTL.MEDIUM);
 
     return res;
@@ -291,10 +326,10 @@ export class BotService {
     await this.telegramBot.telegram.sendMessage(user.chatId, hintMessage(BotMessages.showMenuHint), { parse_mode: 'HTML' });
   }
 
-  private async enrichBotsWithCreatorData(data: any[]) {
+  private async enrichBotsWithCreatorData(data: Bot[]) {
     const createdByIdSet = new Set<string>();
     for (const bot of data) {
-      if (bot.created_by) createdByIdSet.add(bot.created_by);
+      if (bot.createdBy) createdByIdSet.add(bot.createdBy);
     }
 
     const userData = await db.query.users.findMany({
@@ -303,8 +338,20 @@ export class BotService {
 
     return data.map((bot) => ({
       ...bot,
-      created_by_username: userData.find((user) => user.id === bot.created_by)?.username,
+      createdByUsername: userData.find((user) => user.id === bot.createdBy)?.username,
     }));
+  }
+
+  private async enrichBotWithOnchainData(data: Bot[]) {
+    return await Promise.all(
+      data.map(async (bot) => {
+        return {
+          ...bot,
+          balance: bot.address ? formatEther(await this.getBotBalance(bot.address)) : undefined,
+          ticketPrice: bot.address ? formatEther(await this.getTicketPrice(bot.address)) : undefined,
+        };
+      }),
+    );
   }
 
   private generateSlug(displayName: string): string {

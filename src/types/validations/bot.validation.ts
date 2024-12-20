@@ -1,5 +1,14 @@
 import { z } from 'zod';
 
+export interface IGetListBotsQuery {
+  limit: number;
+  page: number;
+  isActive?: boolean;
+  search?: string;
+  orderBy?: string;
+  sort?: 'asc' | 'desc';
+}
+
 export const getListBotsSchema = z.object({
   query: z.object({
     limit: z
@@ -10,6 +19,16 @@ export const getListBotsSchema = z.object({
       .string()
       .optional()
       .transform((val) => Number(val) || 1),
+    isActive: z
+      .enum(['true', 'false'])
+      .optional()
+      .transform((val) => val === 'true'),
+    search: z.string().optional(),
+    orderBy: z.string().optional(),
+    sort: z
+      .enum(['asc', 'desc'])
+      .optional()
+      .transform((val) => val || 'asc'),
   }),
 });
 
