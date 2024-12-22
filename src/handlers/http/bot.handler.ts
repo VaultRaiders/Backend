@@ -31,6 +31,7 @@ export class BotRouter {
     this.router.get('/me/list', protectedMiddleware(), asyncHandler(this.controller.getMyBots));
     this.router.get('/recent', protectedMiddleware(), asyncHandler(this.controller.getRecentBots));
     this.router.get('/:id', protectedMiddleware(), validate(getBotSchema), asyncHandler(this.controller.getBot));
+    this.router.get('/:id/chat-history', protectedMiddleware(), asyncHandler(this.controller.getBotChatHistory));
 
     this.router.post('/', validate(createBotSchema), protectedMiddleware(), asyncHandler(this.controller.createBot));
     this.router.post('/:id/buy-ticket', protectedMiddleware(), validate(buyTicketSchema), asyncHandler(this.controller.buyTicket));
@@ -125,4 +126,16 @@ export class BotController {
 
     sendAccepted(res, {});
   };
+
+  public getBotChatHistory = async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    const telegramUser = authReq.telegramUser!;
+
+    const botId = req.params.id;
+    const body = req.body;
+
+    const chatHistory = await this.botService.getBotChatHistory(botId);
+
+    sendSuccess(res, chatHistory);
+  }
 }

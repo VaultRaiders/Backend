@@ -5,13 +5,14 @@ import OpenAI from 'openai';
 import { config, FACTORY_ADDRESS, OPENAI_API_KEY } from '../config';
 import { REDIS_TTL } from '../constant';
 import { db } from '../infra/db';
-import { Bot, bots, Chat, chats, tickets, User, users } from '../infra/schema';
+import { Bot, bots, Chat, chat_messages, chats, tickets, User, users } from '../infra/schema';
 import { botMessage, hintMessage, systemMessage } from '../util/common';
 import { ICreateBotData, IProccessedBotData } from '../util/interface';
 import { getRedisAllBotsKey, getRedisOneBotKey, getReidsMyBotsKey } from '../util/redis';
 import { RedisService } from './redis.service';
 import { WalletService } from './wallet.service';
 import { GetListBotsResponse, IBotResponse } from '../types/responses/bot.response';
+import { ChatMessageResponse } from '../types/responses/bot.response';
 import { ApiError, BadRequestError, NotFoundError } from '../types/errors';
 import { Telegram } from '../infra/telegram';
 import { BotMessages } from '../components/messages/bot.messages';
@@ -398,6 +399,26 @@ export class BotService {
     } catch (error) {
       console.error('Error approving bot:', error);
       throw new Error('Failed to approve bot');
+    }
+  }
+
+  async getBotChatHistory(botId: string): Promise<ChatMessageResponse[]> {
+    try {
+      const chatHistory = await db
+        .select({
+          id: chat_messages.id,
+          text: chat_messages.text,
+          senderRole: chat_messages.senderRole,
+          createdAt: chat_messages.createdAt,
+        })
+        .from(chat_messages)
+        .leftJoin(chats, eq(chat_messages.chatId, chats.id))
+        .where(eq(chats.botId, botId));
+  
+      return chatHistory as ChatMessageResponse[];
+    } catch (error) {
+      console.error('Error fetching chat history:', error);
+      throw new Error('Failed to fetch chat history');
     }
   }
 }
