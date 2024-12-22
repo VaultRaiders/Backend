@@ -84,14 +84,6 @@ export class WalletHandler extends BaseHandler {
     });
   }
 
-  async handleCancelDeleteWallet(ctx: MyContext) {
-    ctx.session.awaitingDeleteConfirmation = false;
-    await ctx.editMessageText(systemMessage(WalletMessages.deleteCancelled), {
-      parse_mode: 'HTML',
-      ...createWalletKeyboard(true),
-    });
-  }
-
   async handlePasswordInput(ctx: MyContext, password: string) {
     const userId = ctx.from?.id.toString();
     if (!userId) return;

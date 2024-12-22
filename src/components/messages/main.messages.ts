@@ -5,24 +5,23 @@ import { EMOJI, TERMS, MessageFormat, createMessage } from './constant';
 export const MainMessages = {
   welcomeNew: (username: string) => {
     return createMessage({
-      title: `Welcome, brave soul! I am Master Grimclaw, Chief Security Officer of the Ancient Vaults. ${username}, I see you seek to test your magical prowess against our vault guardians.`,
-      body: 'Before you face our challenges, we must establish your magical signature...\n\nFirst, we shall create your secure wallet',
+      title: `🎉 Welcome, brave soul! I am Master Grimclaw, Chief Security Officer of the ${TERMS.LOCATION}. ${username}, I see you seek to test your magical prowess against our vault guardians.`,
+      body: `1️⃣ First, we shall create your wallet ${EMOJI.WALLET}.`,
       action: 'Simply tap "Create Wallet" below, and I shall guide you through the ancient rituals.',
     });
   },
 
   welcomeActiveBot: (username: string, bot: IBotResponse) => {
-    const title = `Ah, ${username}! The magical wards show you've crossed paths with ${bot.displayName}. The ${TERMS.OPPONENT} awaits your return... ${EMOJI.COMBAT}`;
+    const title = `${EMOJI.COMBAT} ${bot.displayName} is ready. Let's battle! ${EMOJI.COMBAT}`;
 
     let body = `${EMOJI.AWARD} Award: ${MessageFormat.formatCurrency(toBigInt(bot.balance))}\n`;
 
     if (bot.hasActiveTicket) {
-      body += `\nThe ${TERMS.OPPONENT} stands ready in the ${TERMS.LOCATION}. Prepare your spells wisely...`;
+      body += `\nSend your message now 👇.`;
     } else {
       body +=
         `${EMOJI.TICKET} ${TERMS.ACCESS}: ${MessageFormat.formatCurrency(toBigInt(bot.ticketPrice))}\n\n` +
-        `Shall we arrange another ${TERMS.BATTLE} with ${bot.displayName}?\n\n` +
-        `Acquire a ${TERMS.ACCESS} to continue this magical challenge! ${EMOJI.COMBAT}`;
+        `Looks like you don't have a ticket or your ticket has expired, buy one and let's battle right away!`;
     }
 
     return createMessage({ title, body });
@@ -30,7 +29,7 @@ export const MainMessages = {
 
   welcomeBack: (username: string) => {
     return createMessage({
-      title: `Welcome back to the Ancient Vaults, ${username}!`,
+      title: `Welcome back to the ${TERMS.LOCATION}, ${username}!`,
       body: `Our magical wards sensed your approach. The ${TERMS.OPPONENT}s stand ready to test your abilities.\n\nEach ${TERMS.OPPONENT} possesses unique magical talents. Choose your opponent wisely...`,
     });
   },

@@ -4,8 +4,7 @@ import { EMOJI, TERMS, MessageFormat, createMessage } from './constant';
 export const WalletMessages = {
   createNew: createMessage({
     title: `Let us create your wallet, challenger! ${EMOJI.COMBAT}`,
-    body: 'First, we must establish a powerful password.\nThis ancient magic will protect your artifacts and magical essence.',
-    note: MessageFormat.formatWarnings([
+    body: MessageFormat.formatWarnings([
       'Guard your password',
       'The wallet cannot be restored without it',
       'Share it with no one - not even the guardians themselves',
@@ -23,7 +22,6 @@ export const WalletMessages = {
     createMessage({
       title: `Welcome to your wallet, challenger! ${EMOJI.COMBAT}`,
       body: `Your address:\n${MessageFormat.formatAddress(address)}\n\n${TERMS.CURRENCY_NAME}: ${MessageFormat.formatCurrency(balance)}`,
-      action: `What magical operations shall we perform today?`,
     }),
 
   noWallet: createMessage({
@@ -33,32 +31,21 @@ export const WalletMessages = {
   }),
 
   deleteConfirmation: createMessage({
-    title: `${EMOJI.WARNING} Are you certain you wish to dissolve your wallet, challenger?`,
-    body: MessageFormat.formatWarnings([
-      'This ritual cannot be undone',
-      'All arcane seals will be lost to the void',
-      'Your magical tributes will cease to flow',
-    ]),
-    note: `I must ensure you fully comprehend this momentous decision... ${EMOJI.MYSTIC}`,
+    title: `${EMOJI.WARNING} Are you certain you wish to delete your wallet, challenger?`,
+    body: MessageFormat.formatWarnings(['This action cannot be undone', 'All assets will lose control']),
+    note: `I must ensure you fully comprehend this momentous decision...`,
   }),
 
   deleteSuccess: createMessage({
-    title: `Your wallet has been dissolved as per your command...`,
+    title: `Your wallet has been deleted as per your command...`,
     body: 'Remember, challenger - you may always create a new wallet.',
     action: `Shall I guide you through the creation of a new magical sanctum? ${EMOJI.COMBAT}`,
-  }),
-
-  deleteCancelled: createMessage({
-    title: `Ah, you choose to maintain your wallet! A wise decision, challenger! ${EMOJI.MYSTIC}`,
-    body: 'Your magical holdings remain secure.',
-    action: `Shall we continue exploring the ancient mysteries?`,
   }),
 
   createSuccess: (address: string) =>
     createMessage({
       title: `Magnificent, challenger! Your wallet stands ready! ${EMOJI.COMBAT}`,
       body: `Behold your unique address:\n${MessageFormat.formatAddress(address)}`,
-      note: `Guard this signature well - it is your key to accessing the ancient powers...`,
     }),
 
   privateKeyInfo: (privateKey: string) =>

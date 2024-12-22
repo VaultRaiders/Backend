@@ -20,7 +20,7 @@ export const blobToBase64 = async (data: Buffer | Blob | ArrayBuffer): Promise<s
 };
 
 export const systemMessage = (text: string) => {
-  return `<b>🧙 Master Grimclaw:</b>\n\n<i>${text}</i>`;
+  return `<b>🧙 Master Grimclaw:</b>\n\n${text}`;
 };
 
 export const botMessage = (name: string, text: string) => {

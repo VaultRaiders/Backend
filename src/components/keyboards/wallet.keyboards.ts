@@ -10,7 +10,7 @@ export const createWalletKeyboard = (hasWallet: boolean) => {
       { text: '✨ Import Wallet', callback_data: 'import_wallet' },
     ]);
   } else {
-    buttons.push([{ text: '💔 Dissolve Wallet', callback_data: 'delete_wallet' }]);
+    buttons.push([{ text: '🗑️ Delete Wallet', callback_data: 'delete_wallet' }]);
   }
 
   buttons.push([{ text: '◀️ Return to Grand Hall', callback_data: 'main_menu' }]);
@@ -21,8 +21,8 @@ export const createWalletKeyboard = (hasWallet: boolean) => {
 export const deleteWalletKeyboard = () => {
   return createInlineKeyboard([
     [
-      { text: '💔 Confirm Dissolution', callback_data: 'confirm_delete_wallet' },
-      { text: '✨ Maintain Wards', callback_data: 'cancel_delete_wallet' },
+      { text: '🗑️ Confirm', callback_data: 'confirm_delete_wallet' },
+      { text: '❌ Not Yet', callback_data: 'manage_wallet' },
     ],
   ]);
 };

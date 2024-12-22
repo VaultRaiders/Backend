@@ -3,17 +3,16 @@ import { EMOJI, TERMS, MessageFormat, createMessage } from './constant';
 export const TicketMessages = {
   purchaseSuccess: (botName: string) =>
     createMessage({
-      title: `${EMOJI.TICKET} Excellent, challenger! Your ${TERMS.ACCESS} with ${botName} has been sealed! ${EMOJI.COMBAT}`,
-      body: `The ${TERMS.OPPONENT} awaits in the ${TERMS.LOCATION}...\nThey are eager to test your magical prowess!`,
+      title: `${EMOJI.TICKET} Excellent! Your ticket with ${botName} has been actived!`,
+      body: `${EMOJI.COMBAT} ${botName} is ready! You can send your message now. ${EMOJI.MYSTIC}`,
     }),
 
   requestPassword: (botName: string, ticketPrice: bigint) =>
     createMessage({
-      title: `Ah, seeking to challenge ${botName} in ${TERMS.BATTLE}? A worthy choice! ${EMOJI.COMBAT}`,
-      body: `The ritual requires ${MessageFormat.formatCurrency(ticketPrice)}. \n\nThe ${
-        TERMS.OPPONENT
-      } has been honing their arcane abilities...\nI require your password to prepare the ancient dueling grounds.`,
-      note: `Fear not - these walls have kept secrets for centuries. ${EMOJI.MYSTIC}`,
+      title: `${EMOJI.TICKET} Buy ticket with ${botName}! ${EMOJI.TICKET}`,
+      body:
+        `💸 Ticket price: ${MessageFormat.formatCurrency(ticketPrice)}\n` +
+        `⚠️ Please provide a password to proceed. I won't store your password anywhere, remember to keep it safe!`,
       action: `${EMOJI.KEY} Your password is:`,
     }),
 

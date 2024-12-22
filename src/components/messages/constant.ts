@@ -10,13 +10,14 @@ export const EMOJI = {
   TICKET: '🎟️', // For permits, access
   SLEEPING: '💤', // For inactive or sleeping status
   AWARD: '🏆',
+  WALLET: '👛',
 } as const;
 
 export const TERMS = {
-  OPPONENT: 'guardian',
-  BATTLE: 'magical trial',
-  ACCESS: 'duel permit',
-  LOCATION: 'ancient chamber',
+  OPPONENT: 'Guardian',
+  BATTLE: 'Magical Battle',
+  ACCESS: 'Ticket',
+  LOCATION: 'Vault Raider Battlefield',
   CURRENCY_SYMBOL: 'Ξ', // Unicode ETH symbol
   CURRENCY_NAME: 'ETH', // Text representation
 } as const;

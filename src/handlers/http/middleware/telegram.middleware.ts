@@ -17,13 +17,6 @@ if (!TELEGRAM_BOT_TOKEN) {
 
 export const protectedMiddleware = () => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const authReq1 = req as AuthenticatedRequest;
-    authReq1.telegramUser = {
-      id: '1672441295',
-      username: 'test',
-    };
-    return next();
-
     if (!req.headers.authorization) {
       return next(new UnauthorizedError('Telegram init data is required'));
     }

@@ -3,15 +3,7 @@ import { User } from '../../infra/schema';
 import { MyContext } from '../../util/interface';
 import { systemMessage } from '../../util/common';
 import { BotService } from '../../services/bot.service';
-import { createBackToMainKeyboard } from '../../components/keyboards/base';
-import { createMainMenuKeyboard } from '../../components/keyboards/main.keyboards';
 import { MainMessages } from '../../components/messages/main.messages';
-import { WalletService } from '../../services/wallet.service';
-
-interface SocialLink {
-  name: string;
-  link: string;
-}
 
 export abstract class BaseHandler {
   protected readonly botService: BotService = BotService.getInstance();

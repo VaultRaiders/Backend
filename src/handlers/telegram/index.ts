@@ -83,7 +83,6 @@ export class TelegramBot {
     this.bot.action('create_wallet', (ctx) => this.walletHandler.handleCreateWallet(ctx));
     this.bot.action('delete_wallet', (ctx) => this.walletHandler.handleDeleteWallet(ctx));
     this.bot.action('confirm_delete_wallet', (ctx) => this.walletHandler.handleConfirmDeleteWallet(ctx));
-    this.bot.action('cancel_delete_wallet', (ctx) => this.walletHandler.handleCancelDeleteWallet(ctx));
 
     // Ticket actions
     this.bot.action('buy_ticket', (ctx) => this.ticketHandler.handleBuyTicket(ctx));
