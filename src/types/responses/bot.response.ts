@@ -10,3 +10,10 @@ export interface IBotResponse extends Bot {
   ticketPrice: string;
   hasActiveTicket?: boolean;
 }
+
+export interface ChatMessageResponse {
+  id: string | null;
+  text: string | null;
+  senderRole: string | null;
+  createdAt: Date | null;
+}
