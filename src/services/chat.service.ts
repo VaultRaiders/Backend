@@ -136,21 +136,23 @@ export class ChatService {
         this.botService.disableTicket(user.id, bot.id);
         switch (message.name) {
           case 'reject': {
-            await this.telegramBot.telegram.sendPhoto(user.chatId!, 'https://iili.io/2wecy1R.png');
-            await this.telegramBot.telegram.sendMessage(user.chatId!, systemMessage(BotMessages.defeatMessage(bot.displayName)), {
+            await this.telegramBot.telegram.sendPhoto(user.chatId!, 'https://iili.io/2OAXNv2.md.png', {
+              caption: BotMessages.defeatMessage(bot.displayName),
               parse_mode: 'HTML',
               ...createSubscriptionRequiredKeyboard(),
             });
+
             break;
           }
           case 'approve': {
             await this.botService.disableBot(bot.id);
 
-            await this.telegramBot.telegram.sendPhoto(user.chatId!, 'https://iili.io/2wecMWG.png');
-            await this.telegramBot.telegram.sendMessage(user.chatId!, systemMessage(BotMessages.victoryMessage(bot.displayName)), {
+            await this.telegramBot.telegram.sendPhoto(user.chatId!, 'https://iili.io/2OAXckN.png', {
+              caption: systemMessage(BotMessages.victoryMessage(bot.displayName)),
               parse_mode: 'HTML',
               ...createBackToMainKeyboard(),
             });
+
             const pendingMsg = await this.telegramBot.telegram.sendMessage(user.chatId!, systemMessage(BotMessages.disbursingAwardMessage()), {
               parse_mode: 'HTML',
             });
