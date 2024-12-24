@@ -12,6 +12,7 @@ export const REDIS_KEY_PREFIX = {
 };
 
 export const REDIS_TTL = {
+  FLASH: 15,
   SHORT: 60,
   MEDIUM: 300,
   LONG: 3600,

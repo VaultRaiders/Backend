@@ -3,7 +3,7 @@ import { Markup } from 'telegraf';
 export interface ButtonConfig {
   text: string;
   callback_data: string;
-  type?: "web_app" | "callback" | "url";
+  type?: 'web_app' | 'callback' | 'url';
 }
 
 export const createInlineButton = (text: string, callback_data: string) => Markup.button.callback(text, callback_data);

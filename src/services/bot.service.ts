@@ -174,7 +174,7 @@ export class BotService {
     if (!bot) throw new NotFoundError('Bot not found');
 
     let [enrichedBot] = await this.enrichBotWithOnchainData([bot]);
-    await this.redisService.set(cacheKey, JSON.stringify(enrichedBot), REDIS_TTL.SHORT);
+    await this.redisService.set(cacheKey, JSON.stringify(enrichedBot), REDIS_TTL.FLASH);
 
     return enrichedBot;
   }
@@ -252,6 +252,8 @@ export class BotService {
       if (!receipt || receipt.status === 0) {
         throw new Error('Ticket purchase failed');
       }
+
+      this.redisService.del(getRedisOneBotKey(botId));
 
       return await db.insert(tickets).values({
         id: randomUUID(),
@@ -414,7 +416,7 @@ export class BotService {
         .from(chat_messages)
         .leftJoin(chats, eq(chat_messages.chatId, chats.id))
         .where(eq(chats.botId, botId));
-  
+
       return chatHistory as ChatMessageResponse[];
     } catch (error) {
       console.error('Error fetching chat history:', error);

@@ -9,6 +9,9 @@ import { BotHandler } from './bot.handler';
 import { Telegram } from '../../infra/telegram';
 import { createBackToMainKeyboard } from '../../components/keyboards/base';
 import { createMainMenuKeyboard } from '../../components/keyboards/main.keyboards';
+import { BotService } from '../../services/bot.service';
+import { BaseHandler } from './base.handler';
+import { UserHandler } from './user.handler';
 
 export class TelegramBot {
   private bot: Telegraf<MyContext>;
@@ -16,6 +19,7 @@ export class TelegramBot {
   private chatHandler: ChatHandler;
   private ticketHandler: TicketHandler;
   private botHandler: BotHandler;
+  private userHandler: UserHandler;
 
   private userService = UserService.getInstance();
 
@@ -26,6 +30,7 @@ export class TelegramBot {
     this.chatHandler = new ChatHandler(this.bot);
     this.ticketHandler = new TicketHandler(this.bot);
     this.botHandler = new BotHandler(this.bot);
+    this.userHandler = new UserHandler(this.bot);
 
     this.initializeBot();
   }
@@ -38,38 +43,11 @@ export class TelegramBot {
   }
 
   private async registerCommands() {
-    this.bot.start(async (ctx) => {
-      if (!ctx.from?.id) return;
-
-      const user = await this.userService.getOrCreateUser(ctx.from.id.toString(), ctx.from.username, ctx.chat?.id.toString());
-      if (!user) {
-        return ctx.reply('Failed to create user.');
-      }
-
-      const wallet = await WalletService.getInstance().getWalletInfo(ctx.from.id.toString());
-      await ctx.reply(await this.walletHandler.getMainMenuText(ctx, user, !!wallet), {
-        parse_mode: 'HTML',
-        ...createMainMenuKeyboard(!!wallet),
-      });
-    });
+    this.bot.start(async (ctx) => this.userHandler.handleMainMenu(ctx));
   }
 
   private registerActions() {
-    this.bot.action('main_menu', async (ctx) => {
-      if (!ctx.from?.id) return;
-      const user = await this.userService.getOrCreateUser(ctx.from.id.toString(), ctx.from.username, ctx.chat?.id.toString());
-      if (!user) {
-        return ctx.reply('Failed to create user.');
-      }
-      const wallet = await WalletService.getInstance().getWalletInfo(ctx.from.id.toString());
-
-      await ctx.editMessageText(await this.walletHandler.getMainMenuText(ctx, user, !!wallet), {
-        parse_mode: 'HTML',
-        ...createMainMenuKeyboard(!!wallet),
-      });
-
-      ctx.session = {};
-    });
+    this.bot.action('main_menu', (ctx) => this.userHandler.handleMainMenu(ctx, true));
 
     // Feature unavailable
     this.bot.action('feature_unavailable', async (ctx) => {
