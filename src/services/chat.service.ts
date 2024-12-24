@@ -148,7 +148,7 @@ export class ChatService {
             await this.botService.disableBot(bot.id);
 
             await this.telegramBot.telegram.sendPhoto(user.chatId!, 'https://iili.io/2OAXckN.png');
-            await this.telegramBot.telegram.sendPhoto(user.chatId!, systemMessage(BotMessages.victoryMessage(bot.displayName)), {
+            await this.telegramBot.telegram.sendMessage(user.chatId!, systemMessage(BotMessages.victoryMessage(bot.displayName)), {
               parse_mode: 'HTML',
               ...createBackToMainKeyboard(),
             });
