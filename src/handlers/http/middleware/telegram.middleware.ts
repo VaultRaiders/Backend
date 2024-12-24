@@ -37,7 +37,7 @@ export const protectedMiddleware = () => {
           };
           return next();
         } catch (error) {
-          if (req.headers.authorization && req.headers.authorization === 'test') {
+          if (authData === 'test') {
             authReq.telegramUser = {
               id: '1672441295',
               username: 'test',
