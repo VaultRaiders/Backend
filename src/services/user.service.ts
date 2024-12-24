@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 import { REDIS_TTL } from '../constant';
 import { db } from '../infra/db';
 import { User, users } from '../infra/schema';
@@ -97,5 +97,27 @@ export class UserService {
       console.error('Error in createUser:', error);
       throw error;
     }
+  }
+
+  async getLeaderboard(k: number = 5) {
+    if(!k) return []
+    return db.query.users.findMany({
+      orderBy: [asc(users.winingAmount)],
+      limit: k
+    })
+  }
+
+  async updateStats(winingAmount: string) { 
+    return db.update(users).set({
+      winCount: sql`${users.winCount} + 1`,
+      playCount: sql`${users.playCount} + 1`,
+      winingAmount: sql`${users.winingAmount} + ${winingAmount}`,
+    })
+  }
+
+  async updatePlayCount() {
+    return db.update(users).set({
+      playCount: sql`${users.playCount} + 1`,
+    })
   }
 }

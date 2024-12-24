@@ -20,8 +20,8 @@ export const protectedMiddleware = () => {
     if (!req.headers.authorization) {
       return next(new UnauthorizedError('Telegram init data is required'));
     }
-    const authReq = req as AuthenticatedRequest;
 
+    const authReq = req as AuthenticatedRequest;
     const [authType, authData = ''] = (req.header('authorization') || '').split(' ');
     switch (authType) {
       case 'tma':

@@ -64,6 +64,20 @@
       "when": 1734443756431,
       "tag": "0008_chief_deathstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1735037551131,
+      "tag": "0009_abandoned_skullbuster",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1735038183284,
+      "tag": "0010_sad_quasar",
+      "breakpoints": true
     }
   ]
 }
