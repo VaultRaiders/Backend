@@ -5,6 +5,7 @@ import { UserRouter } from './user.handler';
 import { errorLoggingMiddleware, loggingMiddleware, performanceMiddleware } from './middleware/logging.middleware';
 import { errorHandler } from './middleware/error.middleware';
 import { logger } from '../../util/logger';
+import { WalletRouter } from './wallet.handler';
 
 interface ServerState {
   isShuttingDown: boolean;
@@ -14,6 +15,7 @@ export class HttpServer {
   private readonly app: Application;
   private readonly botRouter: BotRouter;
   private readonly userRouter: UserRouter;
+  private readonly walletRouter: WalletRouter;
   private server: any;
   private readonly state: ServerState;
 
@@ -22,6 +24,7 @@ export class HttpServer {
     this.state = state;
     this.botRouter = new BotRouter();
     this.userRouter = new UserRouter();
+    this.walletRouter = new WalletRouter();
     this.initializeMiddleware();
     this.initializeRoutes();
     this.initializeErrorHandling();
@@ -52,7 +55,7 @@ export class HttpServer {
     const apiV1Router = express.Router();
     apiV1Router.use('/user', this.userRouter.getRouter());
     apiV1Router.use('/bot', this.botRouter.getRouter());
-    apiV1Router.use('/wallet', this.userRouter.getRouter());
+    apiV1Router.use('/wallet', this.walletRouter.getRouter());
     this.app.use('/api/v1', apiV1Router);
   }
 
