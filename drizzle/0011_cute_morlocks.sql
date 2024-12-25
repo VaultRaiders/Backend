@@ -1,0 +1,1 @@
+ALTER TABLE "bots" ALTER COLUMN "ticket_count" SET DEFAULT '0';
