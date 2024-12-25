@@ -141,12 +141,14 @@ export class ChatService {
               parse_mode: 'HTML',
               ...createSubscriptionRequiredKeyboard(),
             });
+            await this.userService.updatePlayCount()
 
             break;
           }
           case 'approve': {
             await this.botService.disableBot(bot.id);
-
+            await this.botService.updateWinner(bot.id, user.id)
+            bot.poolPrice && await this.userService.updateStats(bot.poolPrice)
             await this.telegramBot.telegram.sendPhoto(user.chatId!, 'https://iili.io/2OAXckN.png');
             await this.telegramBot.telegram.sendMessage(user.chatId!, systemMessage(BotMessages.victoryMessage(bot.displayName)), {
               parse_mode: 'HTML',

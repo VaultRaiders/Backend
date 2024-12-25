@@ -30,6 +30,7 @@ export class BotRouter {
     this.router.get('/', validate(getListBotsSchema), asyncHandler(this.controller.getListBots));
     this.router.get('/me/list', protectedMiddleware(), asyncHandler(this.controller.getMyBots));
     this.router.get('/recent', protectedMiddleware(), asyncHandler(this.controller.getRecentBots));
+    this.router.get('/stats', protectedMiddleware(), asyncHandler(this.controller.getStats));
     this.router.get('/:id', protectedMiddleware(), validate(getBotSchema), asyncHandler(this.controller.getBot));
     this.router.get('/:id/chat-history', protectedMiddleware(), asyncHandler(this.controller.getBotChatHistory));
 
@@ -138,4 +139,9 @@ export class BotController {
 
     sendSuccess(res, chatHistory);
   }
+  public getStats = async (req: Request, res: Response): Promise<void> => {
+    const botStats = await this.botService.getBotStats();
+    sendSuccess(res, botStats);
+  }
+  
 }

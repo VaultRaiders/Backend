@@ -1,4 +1,4 @@
-import { and, eq, sql, isNull, cosineDistance } from 'drizzle-orm';
+import { and, eq, sql, isNull, cosineDistance, sum } from 'drizzle-orm';
 import { asc, desc, ilike, inArray } from 'drizzle-orm/expressions';
 import { randomUUID } from 'node:crypto';
 import OpenAI from 'openai';
@@ -11,7 +11,7 @@ import { ICreateBotData, IProccessedBotData } from '../util/interface';
 import { getRedisAllBotsKey, getRedisOneBotKey, getReidsMyBotsKey } from '../util/redis';
 import { RedisService } from './redis.service';
 import { WalletService } from './wallet.service';
-import { GetListBotsResponse, IBotResponse } from '../types/responses/bot.response';
+import { GetListBotsResponse, IBotResponse, IBotStat } from '../types/responses/bot.response';
 import { ChatMessageResponse } from '../types/responses/bot.response';
 import { ApiError, BadRequestError, NotFoundError } from '../types/errors';
 import { Telegram } from '../infra/telegram';
@@ -255,19 +255,47 @@ export class BotService {
       }
 
       this.redisService.del(getRedisOneBotKey(botId));
-
-      return await db.insert(tickets).values({
+      await this.updateUserCount(botId, userId);
+      const result = await db.insert(tickets).values({
         id: randomUUID(),
         userId,
         botId,
         txHash: receipt.hash,
         price: formatEther(ticketPrice),
-        used: false,
-      });
+        used: false, 
+      })
+
+      await Promise.all([
+        this.updateTicketCount(botId),
+        this.updatePoolPrice(botId, formatEther(ticketPrice))
+      ])
+        
+      return result 
     } catch (error) {
       console.error('Error buying ticket:', error);
       throw new Error('Failed to buy ticket');
     }
+  }
+
+  private async updateUserCount(botId: string, userId: string) {
+    const existedUser = await db.query.tickets.findFirst({where: and(eq(tickets.botId, botId), eq(tickets.userId, userId))});
+    if(existedUser) return
+    await db.update(bots).
+    set({userCount: sql<number>`${bots.userCount}  +  1 `}).where(eq(bots.id, botId))
+  }
+  private async updateTicketCount(botId: string) {
+    await db
+    .update(bots)
+    .set({ticketCount: sql<number>`${bots.ticketCount} + ${1}`,
+    })
+    .where(eq(bots.id, botId))
+  }
+  async updateWinner(botId: string, userId: string) {
+    await db.update(bots).set({winner: userId}).where(eq(bots.id, botId))
+  }
+
+  private async updatePoolPrice(botId: string, ticketPrice: string) {
+    await db.update(bots).set({poolPrice: sql<number>`${bots.ticketCount}+ ${ticketPrice}`}).where(eq(bots.id, botId))
   }
 
   async getAvailableTicket(botId: string, userId: string) {
@@ -422,6 +450,18 @@ export class BotService {
     } catch (error) {
       console.error('Error fetching chat history:', error);
       throw new Error('Failed to fetch chat history');
+    }
+  }
+  async getBotStats(): Promise<IBotStat> {
+    // TODO: get total price from blockchain
+    const [totalPrice, playingNumbers, playingUsers] = await Promise.all(
+      [await db.select({value: sum(bots.poolPrice)}).from(bots), await db.$count(tickets), await db.selectDistinct({user_id: tickets.userId}).from(tickets)]
+    )
+
+    return {
+      totalPrice: totalPrice[0].value || "0",
+      playingNumbers,
+      playingUsers : playingUsers.length
     }
   }
 }

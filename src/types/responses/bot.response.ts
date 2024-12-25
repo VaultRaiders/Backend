@@ -17,3 +17,9 @@ export interface ChatMessageResponse {
   senderRole: string | null;
   createdAt: Date | null;
 }
+
+export interface IBotStat {
+  totalPrice?: string, 
+  playingNumbers?: number,
+  playingUsers?: number
+}
