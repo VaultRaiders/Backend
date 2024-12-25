@@ -51,6 +51,7 @@ export interface ICreateBotData {
   bio: string;
   greeting: string;
   prompt: string;
+  initPrice?: string;
   photoUrl: string;
 }
 

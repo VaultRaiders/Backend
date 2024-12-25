@@ -141,10 +141,19 @@ export class BotService {
       throw new BadRequestError('Insufficient balance for bot creation');
     }
 
+    let botCreationPrice = botCreationFee;
+    if (botData.initPrice) {
+      if (toBigInt(botData.initPrice) < botCreationFee) {
+        throw new BadRequestError('Bot creation fee is higher than initial price');
+      }
+
+      botCreationPrice = toBigInt(botData.initPrice);
+    }
+
     const botInDb = await this.createBotInDatabase(userId, botData);
 
     try {
-      const tx = await factoryContract.connect(wallet).createBot(wallet.address, 0n, { value: botCreationFee });
+      const tx = await factoryContract.connect(wallet).createBot(wallet.address, 0n, { value: botCreationPrice });
 
       const receipt = await tx.wait();
       if (!receipt?.status) throw new Error('Bot creation failed');

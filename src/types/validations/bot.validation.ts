@@ -51,6 +51,7 @@ export const createBotSchema = z.object({
     bio: z.string().optional(),
     prompt: z.string(),
     photoUrl: z.string(),
+    initPrice: z.string().optional(),
     password: z.string(),
   }),
 });
