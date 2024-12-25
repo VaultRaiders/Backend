@@ -36,6 +36,8 @@ export const bots = pgTable(
     winner: varchar('winner'),
     poolPrice: decimal('pool_price').default("0"),
     isActive: boolean('is_active').default(true),
+    lastRejectedAt: timestamp('last_rejected_at'),
+    lastRejectedUser: varchar('last_rejected_users'),
     createdAt: timestamp('created_at').default(sql`now()`),
     updatedAt: timestamp('updated_at').default(sql`now()`),
   },

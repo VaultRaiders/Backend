@@ -99,4 +99,22 @@ export class RedisService {
       throw error;
     }
   }
+  async getFirstInSortedSet (sortedSetKey: string){
+    const results = await this.redisClient.zrange(
+      sortedSetKey,
+      0,
+      new Date().getTime(),
+      'BYSCORE',
+      'LIMIT',
+      0,
+      1
+    );
+    return results?.length ? results[0] : null;
+  }
+  async addToSortedSet (sortedSetKey: string, member: string, score: string) {
+    return this.redisClient.zadd(sortedSetKey, score, member);
+  }
+  async removeFromSortedSet (sortedSetKey: string, member: string) {
+    return this.redisClient.zrem(sortedSetKey, member);
+  }
 }

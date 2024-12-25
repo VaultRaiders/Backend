@@ -13,6 +13,7 @@ import { WalletService } from './wallet.service';
 import { BotMessages } from '../components/messages/bot.messages';
 import { createSubscriptionRequiredKeyboard } from '../components/keyboards/chat.keyboards';
 import { createBackToMainKeyboard } from '../components/keyboards/base';
+import { ScheduleService } from './schedule.service';
 
 export interface ChatResponse {
   msg: ChatMessage[];
@@ -33,6 +34,7 @@ export class ChatService {
   private readonly userService = UserService.getInstance();
   private readonly botService = BotService.getInstance();
   private readonly walletService = WalletService.getInstance();
+  private readonly scheduleService = ScheduleService.getInstance()
 
   private constructor() {}
 
@@ -136,31 +138,33 @@ export class ChatService {
         this.botService.disableTicket(user.id, bot.id);
         switch (message.name) {
           case 'reject': {
+            await this.botService.userDefeated(bot, user)
+            
+            const isoTimestamp = new Date().toISOString();
+            const unixTimestamp = Math.floor(new Date(isoTimestamp).getTime());
+            this.scheduleService.schedule(bot.id, 
+              async ()=> {
+                await this.botService.botDefeated(bot, user)
+              },
+              unixTimestamp + 43200000 //12hours,
+            )
             await this.telegramBot.telegram.sendPhoto(user.chatId!, 'https://iili.io/2OAXNv2.md.png');
             await this.telegramBot.telegram.sendMessage(user.chatId!, systemMessage(BotMessages.defeatMessage(bot.displayName)), {
               parse_mode: 'HTML',
               ...createSubscriptionRequiredKeyboard(),
             });
-            await this.userService.updatePlayCount()
-
             break;
           }
           case 'approve': {
-            await this.botService.disableBot(bot.id);
-            await this.botService.updateWinner(bot.id, user.id)
-            bot.poolPrice && await this.userService.updateStats(bot.poolPrice)
+            const reciept = await this.botService.botDefeated(bot, user)
+            const pendingMsg = await this.telegramBot.telegram.sendMessage(user.chatId!, systemMessage(BotMessages.disbursingAwardMessage()), {
+              parse_mode: 'HTML',
+            });
             await this.telegramBot.telegram.sendPhoto(user.chatId!, 'https://iili.io/2OAXckN.png');
             await this.telegramBot.telegram.sendMessage(user.chatId!, systemMessage(BotMessages.victoryMessage(bot.displayName)), {
               parse_mode: 'HTML',
               ...createBackToMainKeyboard(),
             });
-
-            const pendingMsg = await this.telegramBot.telegram.sendMessage(user.chatId!, systemMessage(BotMessages.disbursingAwardMessage()), {
-              parse_mode: 'HTML',
-            });
-
-            const winnerAddress = await this.walletService.getWalletAddress(user.id);
-            const reciept = await this.botService.approveBot(bot.address!, winnerAddress);
             if (reciept) {
               await this.telegramBot.telegram.editMessageText(
                 pendingMsg.chat.id,

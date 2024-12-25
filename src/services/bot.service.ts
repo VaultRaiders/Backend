@@ -25,7 +25,6 @@ import { IBot, IFactory } from '../types/typechain-types';
 import { BotCreatedEvent } from '../types/typechain-types/contracts/IFactory';
 import { promise } from 'zod';
 import { IGetListBotsQuery } from '../types/validations/bot.validation';
-import { format } from 'node:path';
 
 export class BotService {
   private static instance: BotService;
@@ -275,21 +274,24 @@ export class BotService {
   }
 
   private async updateUserCount(botId: string, userId: string) {
-    const existedUser = await db.query.tickets.findFirst({ where: and(eq(tickets.botId, botId), eq(tickets.userId, userId)) });
-    if (existedUser) return;
-    await db
-      .update(bots)
-      .set({ userCount: sql<number>`${bots.userCount}  +  1 ` })
-      .where(eq(bots.id, botId));
+    const existedUser = await db.query.tickets.findFirst({where: and(eq(tickets.botId, botId), eq(tickets.userId, userId))});
+    if(existedUser) return
+    await db.update(bots).
+    set({userCount: sql<number>`${bots.userCount} + 1`}).where(eq(bots.id, botId))
   }
   private async updateTicketCount(botId: string) {
     await db
-      .update(bots)
-      .set({ ticketCount: sql<number>`${bots.ticketCount} + ${1}` })
-      .where(eq(bots.id, botId));
+    .update(bots)
+    .set({ticketCount: sql<number>`${bots.ticketCount} + 1`,
+    })
+    .where(eq(bots.id, botId))
   }
   async updateWinner(botId: string, userId: string) {
     await db.update(bots).set({ winner: userId }).where(eq(bots.id, botId));
+  }
+
+  async updateLastRejectUser(botId: string, userId: string) {
+    await db.update(bots).set({lastRejectedAt : sql`now()`, lastRejectedUser: userId}).where(eq(bots.id, botId))
   }
 
   private async updatePoolPrice(botId: string, ticketPrice: string) {
@@ -466,6 +468,25 @@ export class BotService {
       playingNumbers,
       playingUsers: playingUsers.length,
     };
+  }
+
+
+  async botDefeated(bot: Bot, user: User) {
+    await Promise.all([
+      this.disableBot(bot.id), 
+      this.updateWinner(bot.id, user.id), 
+      async ()=> {
+      bot.poolPrice && await this.userService.updateStats(bot.poolPrice)
+    }]) 
+    const winnerAddress = await this.walletService.getWalletAddress(user.id);
+    const reciept = await this.approveBot(bot.address!, winnerAddress);
+    return reciept;
+  }
+  async userDefeated(bot: Bot, user: User) {
+    await Promise.all([
+      this.updateLastRejectUser(bot.id, user.id),
+      this.userService.updatePlayCount()
+    ])
   }
 }
 

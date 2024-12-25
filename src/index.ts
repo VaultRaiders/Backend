@@ -1,6 +1,7 @@
 import { SERVER_PORT, TELEGRAM_BOT_TOKEN } from './config';
 import { HttpServer } from './handlers/http';
 import { TelegramBot } from './handlers/telegram';
+import { ScheduleService } from './services/schedule.service';
 
 interface ServerState {
   isShuttingDown: boolean;
@@ -10,11 +11,13 @@ class ApplicationServer {
   private readonly httpServer: HttpServer;
   private readonly telegramBot: TelegramBot;
   private readonly state: ServerState;
+  private readonly scheduleService: ScheduleService
 
   constructor() {
     this.state = { isShuttingDown: false };
     this.telegramBot = new TelegramBot();
     this.httpServer = new HttpServer(this.state);
+    this.scheduleService = ScheduleService.getInstance()
   }
 
   private async gracefulShutdown(signal: string): Promise<void> {
@@ -51,6 +54,10 @@ class ApplicationServer {
       // Start HTTP server
       await this.httpServer.start(SERVER_PORT);
       console.log(`[${new Date().toISOString()}] Server is running on port ${SERVER_PORT}`);
+
+      // Schedule Service
+      this.scheduleService.start()
+      console.log(`[${new Date().toISOString()}] Schedule service started successfully`);
 
       // Start Telegram bot
       await this.telegramBot.launch();
