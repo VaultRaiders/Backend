@@ -51,9 +51,9 @@ export class BotService {
   }
 
   async getListBots({ isActive, search, orderBy, sort, limit, page, createdBy }: IGetListBotsQuery): Promise<GetListBotsResponse> {
-    const cacheKey = getRedisAllBotsKey(JSON.stringify({ isActive, search, orderBy, sort, limit, page, createdBy }));
-    const cachedData = await this.redisService.get(cacheKey);
-    if (cachedData) return JSON.parse(cachedData);
+    // const cacheKey = getRedisAllBotsKey(JSON.stringify({ isActive, search, orderBy, sort, limit, page, createdBy }));
+    // const cachedData = await this.redisService.get(cacheKey);
+    // if (cachedData) return JSON.parse(cachedData);
 
     const conditions = [
       ...(isActive !== undefined ? [eq(bots.isActive, isActive)] : []),
@@ -98,7 +98,7 @@ export class BotService {
     }
 
     const response = { bots: enrichedOnchainData, total: Number(count) };
-    await this.redisService.set(cacheKey, JSON.stringify(response), REDIS_TTL.MEDIUM);
+    // await this.redisService.set(cacheKey, JSON.stringify(response), REDIS_TTL.MEDIUM);
 
     return response;
   }
@@ -274,24 +274,28 @@ export class BotService {
   }
 
   private async updateUserCount(botId: string, userId: string) {
-    const existedUser = await db.query.tickets.findFirst({where: and(eq(tickets.botId, botId), eq(tickets.userId, userId))});
-    if(existedUser) return
-    await db.update(bots).
-    set({userCount: sql<number>`${bots.userCount} + 1`}).where(eq(bots.id, botId))
+    const existedUser = await db.query.tickets.findFirst({ where: and(eq(tickets.botId, botId), eq(tickets.userId, userId)) });
+    if (existedUser) return;
+    await db
+      .update(bots)
+      .set({ userCount: sql<number>`${bots.userCount} + 1` })
+      .where(eq(bots.id, botId));
   }
   private async updateTicketCount(botId: string) {
     await db
-    .update(bots)
-    .set({ticketCount: sql<number>`${bots.ticketCount} + 1`,
-    })
-    .where(eq(bots.id, botId))
+      .update(bots)
+      .set({ ticketCount: sql<number>`${bots.ticketCount} + 1` })
+      .where(eq(bots.id, botId));
   }
   async updateWinner(botId: string, userId: string) {
     await db.update(bots).set({ winner: userId }).where(eq(bots.id, botId));
   }
 
   async updateLastRejectUser(botId: string, userId: string) {
-    await db.update(bots).set({lastRejectedAt : sql`now()`, lastRejectedUser: userId}).where(eq(bots.id, botId))
+    await db
+      .update(bots)
+      .set({ lastRejectedAt: sql`now()`, lastRejectedUser: userId })
+      .where(eq(bots.id, botId));
   }
 
   private async updatePoolPrice(botId: string, ticketPrice: string) {
@@ -470,23 +474,20 @@ export class BotService {
     };
   }
 
-
   async botDefeated(bot: Bot, user: User) {
     await Promise.all([
-      this.disableBot(bot.id), 
-      this.updateWinner(bot.id, user.id), 
-      async ()=> {
-      bot.poolPrice && await this.userService.updateStats(bot.poolPrice)
-    }]) 
+      this.disableBot(bot.id),
+      this.updateWinner(bot.id, user.id),
+      async () => {
+        bot.poolPrice && (await this.userService.updateStats(bot.poolPrice));
+      },
+    ]);
     const winnerAddress = await this.walletService.getWalletAddress(user.id);
     const reciept = await this.approveBot(bot.address!, winnerAddress);
     return reciept;
   }
   async userDefeated(bot: Bot, user: User) {
-    await Promise.all([
-      this.updateLastRejectUser(bot.id, user.id),
-      this.userService.updatePlayCount()
-    ])
+    await Promise.all([this.updateLastRejectUser(bot.id, user.id), this.userService.updatePlayCount()]);
   }
 }
 
