@@ -40,7 +40,7 @@ export class WalletController {
     const balance = await this.walletService.getBalance(address);
     sendSuccess(res, {
       address,
-      balance,
+      balance: balance.toString(),
     });
   };
 }
