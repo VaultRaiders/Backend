@@ -52,6 +52,7 @@ export class HttpServer {
     const apiV1Router = express.Router();
     apiV1Router.use('/user', this.userRouter.getRouter());
     apiV1Router.use('/bot', this.botRouter.getRouter());
+    apiV1Router.use('/wallet', this.userRouter.getRouter());
     this.app.use('/api/v1', apiV1Router);
   }
 

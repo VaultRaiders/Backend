@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import * as crypto from 'crypto';
 import { wallets } from '../infra/schema';
 import { OWNER_PRIVATE_KEY, RPC_URL } from '../config';
+import { NotFoundError } from '../types/errors';
 
 export class WalletService {
   private static instance: WalletService;
@@ -109,9 +110,11 @@ export class WalletService {
   }
 
   async getWalletInfo(userId: string) {
-    const userWallet = await db.select().from(wallets).where(eq(wallets.userId, userId));
-    if (userWallet.length === 0) return null;
-    return userWallet[0];
+    const userWallet = await db.query.wallets.findFirst({
+      where: eq(wallets.userId, userId),
+    });
+
+    return userWallet;
   }
 
   async getBalance(address: string): Promise<bigint> {

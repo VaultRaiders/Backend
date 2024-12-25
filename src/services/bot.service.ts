@@ -51,7 +51,7 @@ export class BotService {
     return BotService.instance;
   }
 
-  async getListBots({ isActive, search, orderBy, sort, limit, page }: IGetListBotsQuery): Promise<GetListBotsResponse> {
+  async getListBots({ isActive, search, orderBy, sort, limit, page, createdBy }: IGetListBotsQuery): Promise<GetListBotsResponse> {
     const cacheKey = getRedisAllBotsKey(JSON.stringify({ isActive, search, orderBy, sort, limit, page }));
     const cachedData = await this.redisService.get(cacheKey);
     if (cachedData) return JSON.parse(cachedData);
@@ -59,6 +59,7 @@ export class BotService {
     const conditions = [
       ...(isActive !== undefined ? [eq(bots.isActive, isActive)] : []),
       ...(search ? [ilike(bots.displayName, `%${search}%`)] : []),
+      ...(createdBy ? [eq(bots.createdBy, createdBy)] : []),
     ];
 
     const dbQuery = db

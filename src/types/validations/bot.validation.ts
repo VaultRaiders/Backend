@@ -7,6 +7,7 @@ export interface IGetListBotsQuery {
   search?: string;
   orderBy?: string;
   sort?: 'asc' | 'desc';
+  createdBy?: string;
 }
 
 export const getListBotsSchema = z.object({
