@@ -52,7 +52,7 @@ export class BotService {
   }
 
   async getListBots({ isActive, search, orderBy, sort, limit, page, createdBy }: IGetListBotsQuery): Promise<GetListBotsResponse> {
-    const cacheKey = getRedisAllBotsKey(JSON.stringify({ isActive, search, orderBy, sort, limit, page }));
+    const cacheKey = getRedisAllBotsKey(JSON.stringify({ isActive, search, orderBy, sort, limit, page, createdBy }));
     const cachedData = await this.redisService.get(cacheKey);
     if (cachedData) return JSON.parse(cachedData);
 
@@ -262,15 +262,12 @@ export class BotService {
         botId,
         txHash: receipt.hash,
         price: formatEther(ticketPrice),
-        used: false, 
-      })
+        used: false,
+      });
 
-      await Promise.all([
-        this.updateTicketCount(botId),
-        this.updatePoolPrice(botId, formatEther(ticketPrice))
-      ])
-        
-      return result 
+      await Promise.all([this.updateTicketCount(botId), this.updatePoolPrice(botId, formatEther(ticketPrice))]);
+
+      return result;
     } catch (error) {
       console.error('Error buying ticket:', error);
       throw new Error('Failed to buy ticket');
@@ -278,24 +275,28 @@ export class BotService {
   }
 
   private async updateUserCount(botId: string, userId: string) {
-    const existedUser = await db.query.tickets.findFirst({where: and(eq(tickets.botId, botId), eq(tickets.userId, userId))});
-    if(existedUser) return
-    await db.update(bots).
-    set({userCount: sql<number>`${bots.userCount}  +  1 `}).where(eq(bots.id, botId))
+    const existedUser = await db.query.tickets.findFirst({ where: and(eq(tickets.botId, botId), eq(tickets.userId, userId)) });
+    if (existedUser) return;
+    await db
+      .update(bots)
+      .set({ userCount: sql<number>`${bots.userCount}  +  1 ` })
+      .where(eq(bots.id, botId));
   }
   private async updateTicketCount(botId: string) {
     await db
-    .update(bots)
-    .set({ticketCount: sql<number>`${bots.ticketCount} + ${1}`,
-    })
-    .where(eq(bots.id, botId))
+      .update(bots)
+      .set({ ticketCount: sql<number>`${bots.ticketCount} + ${1}` })
+      .where(eq(bots.id, botId));
   }
   async updateWinner(botId: string, userId: string) {
-    await db.update(bots).set({winner: userId}).where(eq(bots.id, botId))
+    await db.update(bots).set({ winner: userId }).where(eq(bots.id, botId));
   }
 
   private async updatePoolPrice(botId: string, ticketPrice: string) {
-    await db.update(bots).set({poolPrice: sql<number>`${bots.ticketCount}+ ${ticketPrice}`}).where(eq(bots.id, botId))
+    await db
+      .update(bots)
+      .set({ poolPrice: sql<number>`${bots.ticketCount}+ ${ticketPrice}` })
+      .where(eq(bots.id, botId));
   }
 
   async getAvailableTicket(botId: string, userId: string) {
@@ -454,15 +455,17 @@ export class BotService {
   }
   async getBotStats(): Promise<IBotStat> {
     // TODO: get total price from blockchain
-    const [totalPrice, playingNumbers, playingUsers] = await Promise.all(
-      [await db.select({value: sum(bots.poolPrice)}).from(bots), await db.$count(tickets), await db.selectDistinct({user_id: tickets.userId}).from(tickets)]
-    )
+    const [totalPrice, playingNumbers, playingUsers] = await Promise.all([
+      await db.select({ value: sum(bots.poolPrice) }).from(bots),
+      await db.$count(tickets),
+      await db.selectDistinct({ user_id: tickets.userId }).from(tickets),
+    ]);
 
     return {
-      totalPrice: totalPrice[0].value || "0",
+      totalPrice: totalPrice[0].value || '0',
       playingNumbers,
-      playingUsers : playingUsers.length
-    }
+      playingUsers: playingUsers.length,
+    };
   }
 }
 
