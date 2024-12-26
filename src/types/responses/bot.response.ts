@@ -19,7 +19,8 @@ export interface ChatMessageResponse {
 }
 
 export interface IBotStat {
-  totalPrice?: string, 
-  playingNumbers?: number,
-  playingUsers?: number
+  totalPrice?: string;
+  playingNumbers?: number;
+  playingUsers?: number;
+  totalBots: number;
 }

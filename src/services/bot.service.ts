@@ -470,16 +470,18 @@ export class BotService {
   }
   async getBotStats(): Promise<IBotStat> {
     // TODO: get total price from blockchain
-    const [totalPrice, playingNumbers, playingUsers] = await Promise.all([
+    const [totalPrice, playingNumbers, playingUsers, totalBots] = await Promise.all([
       await db.select({ value: sum(bots.poolPrice) }).from(bots),
       await db.$count(tickets),
       await db.selectDistinct({ user_id: tickets.userId }).from(tickets),
+      await db.$count(bots),
     ]);
 
     return {
       totalPrice: totalPrice[0].value || '0',
       playingNumbers,
       playingUsers: playingUsers.length,
+      totalBots,
     };
   }
 
