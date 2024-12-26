@@ -1,0 +1,1 @@
+ALTER TABLE "bots" ADD COLUMN "win_message_id" varchar;

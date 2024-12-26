@@ -5,7 +5,7 @@ import OpenAI from 'openai';
 import { config, FACTORY_ADDRESS, OPENAI_API_KEY } from '../config';
 import { REDIS_TTL } from '../constant';
 import { db } from '../infra/db';
-import { Bot, bots, Chat, chat_messages, chats, tickets, User, users } from '../infra/schema';
+import { Bot, bots, Chat, chat_messages, ChatMessage, chats, tickets, User, users } from '../infra/schema';
 import { botMessage, hintMessage, systemMessage } from '../util/common';
 import { ICreateBotData, IProccessedBotData } from '../util/interface';
 import { getRedisAllBotsKey, getRedisOneBotKey, getReidsMyBotsKey } from '../util/redis';
@@ -300,6 +300,9 @@ export class BotService {
     await db.update(bots).set({ winner: userId }).where(eq(bots.id, botId));
   }
 
+  async updateWinMessage(botId: string, messageId: string) {
+    await db.update(bots).set({ winMessageId: messageId }).where(eq(bots.id, botId));
+  }
   async updateLastRejectUser(botId: string, userId: string) {
     await db
       .update(bots)
@@ -485,15 +488,17 @@ export class BotService {
     };
   }
 
-  async botDefeated(bot: Bot, user: User) {
+  async botDefeated(bot: Bot, user: User, userMessage: ChatMessage) {
     await Promise.all([
       this.disableBot(bot.id),
       this.updateWinner(bot.id, user.id),
+      this.updateWinMessage(bot.id, userMessage.id),
       async () => {
         bot.poolPrice && (await this.userService.updateStats(bot.poolPrice));
       },
     ]);
     const winnerAddress = await this.walletService.getWalletAddress(user.id);
+    return;
     const reciept = await this.approveBot(bot.address!, winnerAddress);
     return reciept;
   }

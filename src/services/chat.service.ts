@@ -34,7 +34,7 @@ export class ChatService {
   private readonly userService = UserService.getInstance();
   private readonly botService = BotService.getInstance();
   private readonly walletService = WalletService.getInstance();
-  private readonly scheduleService = ScheduleService.getInstance()
+  private readonly scheduleService = ScheduleService.getInstance();
 
   private constructor() {}
 
@@ -63,9 +63,9 @@ export class ChatService {
 
       const chat = await this.getOrCreateChat(user.id, bot, ticket);
       const threadId = chat.id;
-      await this.saveUserMessage(currentChat.id, user, bot, messageText);
+      const userMessage = await this.saveUserMessage(currentChat.id, user, bot, messageText);
 
-      const msg = await this.processMessage(threadId, chat, user, bot, ctx);
+      const msg = await this.processMessage(threadId, chat, user, bot, userMessage, ctx);
 
       await this.updateMessageCount(user, bot, chat, msg);
 
@@ -100,7 +100,7 @@ export class ChatService {
     return newChat;
   }
 
-  private async processMessage(threadId: string, chat: Chat, user: User, bot: Bot, ctx: MyContext): Promise<ChatMessage[]> {
+  private async processMessage(threadId: string, chat: Chat, user: User, bot: Bot, userMessage: ChatMessage, ctx: MyContext): Promise<ChatMessage[]> {
     const oldMessage: ChatMessage[] = await db.query.chat_messages.findMany({
       where: eq(chat_messages.chatId, chat.id),
       orderBy: [desc(chat_messages.createdAt)],
@@ -122,12 +122,12 @@ export class ChatService {
       },
       ...history,
     ];
-    const responseMessage = await this.handleOpenAIChat(messages, user, bot);
+    const responseMessage = await this.handleOpenAIChat(messages, user, bot, userMessage);
     const message = await this.saveBotMessage(threadId, user, bot, responseMessage);
     return [message];
   }
 
-  private async handleOpenAIChat(messages: any[], user: User, bot: Bot): Promise<string> {
+  private async handleOpenAIChat(messages: any[], user: User, bot: Bot, userMessage: ChatMessage): Promise<string> {
     return new Promise(async (res, rej) => {
       const runner = await this.openAIService.sendMessageWithChatComplele(messages);
 
@@ -138,16 +138,17 @@ export class ChatService {
         this.botService.disableTicket(user.id, bot.id);
         switch (message.name) {
           case 'reject': {
-            await this.botService.userDefeated(bot, user)
-            
+            await this.botService.userDefeated(bot, user);
+
             const isoTimestamp = new Date().toISOString();
             const unixTimestamp = Math.floor(new Date(isoTimestamp).getTime());
-            this.scheduleService.schedule(bot.id, 
-              async ()=> {
-                await this.botService.botDefeated(bot, user)
+            this.scheduleService.schedule(
+              bot.id,
+              async () => {
+                await this.botService.botDefeated(bot, user, userMessage);
               },
-              unixTimestamp + 43200000 //12hours,
-            )
+              unixTimestamp + 43200000, //12hours,
+            );
             await this.telegramBot.telegram.sendPhoto(user.chatId!, 'https://iili.io/2OAXNv2.md.png');
             await this.telegramBot.telegram.sendMessage(user.chatId!, systemMessage(BotMessages.defeatMessage(bot.displayName)), {
               parse_mode: 'HTML',
@@ -156,7 +157,7 @@ export class ChatService {
             break;
           }
           case 'approve': {
-            const reciept = await this.botService.botDefeated(bot, user)
+            const reciept = await this.botService.botDefeated(bot, user, userMessage);
             const pendingMsg = await this.telegramBot.telegram.sendMessage(user.chatId!, systemMessage(BotMessages.disbursingAwardMessage()), {
               parse_mode: 'HTML',
             });
