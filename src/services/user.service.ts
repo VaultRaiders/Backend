@@ -100,24 +100,49 @@ export class UserService {
   }
 
   async getLeaderboard(k: number = 5) {
-    if(!k) return []
-    return db.query.users.findMany({
+    if (!k) return [];
+    const data = await db.query.users.findMany({
       orderBy: [asc(users.winingAmount)],
-      limit: k
-    })
+    });
+
+    const metadata = data.reduce(
+      (prev, curr) => {
+        prev.totalParticipant += 1;
+        if (curr?.winingAmount) {
+          prev.totalPrizeEarned = `${+prev.totalPrizeEarned + curr?.winingAmount}`;
+        }
+        if (curr.playCount) {
+          prev.totalPlays += curr.playCount;
+        }
+        if (curr.winCount) {
+          prev.totalWin += curr.winCount;
+        }
+        return prev;
+      },
+      { totalParticipant: 0, totalPrizeEarned: '0', totalPlays: 0, totalWin: 0 } as {
+        totalParticipant: number;
+        totalPrizeEarned: string;
+        totalPlays: number;
+        totalWin: number;
+      },
+    );
+    return {
+      leaderboard: data,
+      metadata,
+    };
   }
 
-  async updateStats(winingAmount: string) { 
+  async updateStats(winingAmount: string) {
     return db.update(users).set({
       winCount: sql`${users.winCount} + 1`,
       playCount: sql`${users.playCount} + 1`,
       winingAmount: sql`${users.winingAmount} + ${winingAmount}`,
-    })
+    });
   }
 
   async updatePlayCount() {
     return db.update(users).set({
       playCount: sql`${users.playCount} + 1`,
-    })
+    });
   }
 }
