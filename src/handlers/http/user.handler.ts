@@ -16,8 +16,8 @@ export class UserRouter {
   }
 
   private initializeRoutes(): void {
-    this.router.get('/me', protectedMiddleware(), asyncHandler(this.controller.getProfile)); 
-    this.router.get('/leaderboard', protectedMiddleware(), asyncHandler(this.controller.getLeaderboard)); 
+    this.router.get('/me', protectedMiddleware(), asyncHandler(this.controller.getProfile));
+    this.router.get('/leaderboard', protectedMiddleware(), asyncHandler(this.controller.getLeaderboard));
   }
 
   public getRouter(): Router {
@@ -38,11 +38,11 @@ export class UserController {
 
     const profile = await this.userService.getUserById(telegramUser.id);
     sendSuccess(res, profile);
-  }; 
+  };
 
-  public getLeaderboard = async(req: Request, res: Response): Promise<void> => {
-      const k = Number(req.query?.k || 5)
-     const users =  await this.userService.getLeaderboard(k)
-     sendSuccess(res, users)
-  }
+  public getLeaderboard = async (req: Request, res: Response): Promise<void> => {
+    const k = Number(req.query?.k || 20);
+    const users = await this.userService.getLeaderboard(k);
+    sendSuccess(res, users);
+  };
 }

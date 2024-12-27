@@ -1,4 +1,4 @@
-import { asc, eq, sql } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { REDIS_TTL } from '../constant';
 import { db } from '../infra/db';
 import { User, users } from '../infra/schema';
@@ -99,10 +99,10 @@ export class UserService {
     }
   }
 
-  async getLeaderboard(k: number = 5) {
+  async getLeaderboard(k: number = 20) {
     if (!k) return [];
     const data = await db.query.users.findMany({
-      orderBy: [asc(users.winingAmount)],
+      orderBy: [desc(users.winingAmount)],
     });
 
     const metadata = data.reduce(
@@ -127,7 +127,7 @@ export class UserService {
       },
     );
     return {
-      leaderboard: data,
+      leaderboard: data.slice(0, k),
       metadata,
     };
   }

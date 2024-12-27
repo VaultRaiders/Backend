@@ -278,7 +278,7 @@ export class BotService {
         used: false,
       });
 
-      await Promise.all([this.updateTicketCount(botId), this.updatePoolPrice(botId, formatEther(ticketPrice))]);
+      await Promise.all([this.updateTicketCount(botId)]);
 
       return result;
     } catch (error) {
@@ -318,7 +318,7 @@ export class BotService {
   private async updatePoolPrice(botId: string, ticketPrice: string) {
     await db
       .update(bots)
-      .set({ poolPrice: sql<number>`${bots.ticketCount}+ ${ticketPrice}` })
+      .set({ poolPrice: sql<number>`${bots.poolPrice}+ ${ticketPrice}` })
       .where(eq(bots.id, botId));
   }
 
@@ -368,10 +368,20 @@ export class BotService {
       where: inArray(users.id, Array.from(createdByIdSet)),
     });
 
-    return data.map((bot) => ({
-      ...bot,
-      createdByUsername: userData.find((user) => user.id === bot.createdBy)?.username,
-    }));
+    return await Promise.all(
+      data.map(async (bot) => {
+        const createdByUsername = userData.find((user) => user.id === bot.createdBy)?.username;
+        let winnerWallet;
+        if (bot.winner) {
+          winnerWallet = await this.walletService.getWalletAddress(bot.winner);
+        }
+        return {
+          ...bot,
+          createdByUsername,
+          winnerWallet,
+        };
+      }),
+    );
   }
 
   private async enrichBotWithOnchainData(data: Bot[]): Promise<IBotResponse[]> {
@@ -499,11 +509,17 @@ export class BotService {
       this.updateWinner(bot.id, user.id),
       this.updateWinMessage(bot.id, userMessage.id),
       async () => {
-        bot.poolPrice && (await this.userService.updateStats(bot.poolPrice));
+        let botBalance;
+        if (bot?.address) {
+          botBalance = await this.walletService.getBalance(bot.address);
+        }
+        if (botBalance) {
+          this.updatePoolPrice(bot.id, `${botBalance}`);
+          await this.userService.updateStats(`${botBalance}`);
+        }
       },
     ]);
     const winnerAddress = await this.walletService.getWalletAddress(user.id);
-    return;
     const reciept = await this.approveBot(bot.address!, winnerAddress);
     return reciept;
   }
