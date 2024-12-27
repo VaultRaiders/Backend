@@ -363,10 +363,20 @@ export class BotService {
       where: inArray(users.id, Array.from(createdByIdSet)),
     });
 
-    return data.map((bot) => ({
-      ...bot,
-      createdByUsername: userData.find((user) => user.id === bot.createdBy)?.username,
-    }));
+    return await Promise.all(
+      data.map(async (bot) => {
+        const createdByUsername = userData.find((user) => user.id === bot.createdBy)?.username;
+        let winnerWallet;
+        if (bot.winner) {
+          winnerWallet = await this.walletService.getWalletAddress(bot.winner);
+        }
+        return {
+          ...bot,
+          createdByUsername,
+          winnerWallet,
+        };
+      }),
+    );
   }
 
   private async enrichBotWithOnchainData(data: Bot[]): Promise<IBotResponse[]> {
