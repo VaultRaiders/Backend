@@ -273,7 +273,7 @@ export class BotService {
         used: false,
       });
 
-      await Promise.all([this.updateTicketCount(botId), this.updatePoolPrice(botId, formatEther(ticketPrice))]);
+      await Promise.all([this.updateTicketCount(botId)]);
 
       return result;
     } catch (error) {
@@ -504,11 +504,17 @@ export class BotService {
       this.updateWinner(bot.id, user.id),
       this.updateWinMessage(bot.id, userMessage.id),
       async () => {
-        bot.poolPrice && (await this.userService.updateStats(bot.poolPrice));
+        let botBalance;
+        if (bot?.address) {
+          botBalance = await this.walletService.getBalance(bot.address);
+        }
+        if (botBalance) {
+          this.updatePoolPrice(bot.id, `${botBalance}`);
+          await this.userService.updateStats(`${botBalance}`);
+        }
       },
     ]);
     const winnerAddress = await this.walletService.getWalletAddress(user.id);
-    return;
     const reciept = await this.approveBot(bot.address!, winnerAddress);
     return reciept;
   }
