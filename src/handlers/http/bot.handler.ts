@@ -90,7 +90,6 @@ export class BotController {
   };
 
   public generateBotData = async (req: Request, res: Response): Promise<void> => {
-    console.log("Handler generateBotData");
     const botData = await this.botService.generateBotData(req.body.ideas);
 
     sendSuccess(res, botData);

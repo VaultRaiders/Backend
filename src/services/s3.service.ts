@@ -1,5 +1,6 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { S3_ENDPOINT, S3_BUCKET, S3_REGION, S3_ACCESS_KEY, S3_SECRET_KEY } from '../config';
+import { string } from "zod";
 
 export class S3Service {
     private static instance: S3Service;
@@ -24,7 +25,7 @@ export class S3Service {
         return S3Service.instance;
     }
 
-    async uploadFile(file: Buffer, key: string | null): Promise<string> {
+    async uploadFile(file: Buffer, key: string | null, contentType: string): Promise<string> {
         if (!key) {
             key = Math.random().toString(36).substring(7);
         }
@@ -32,6 +33,7 @@ export class S3Service {
             Bucket: S3_BUCKET,
             Key: key,
             Body: file,
+            ContentType: contentType,
         });
 
         try {

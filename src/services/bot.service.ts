@@ -584,13 +584,16 @@ The system prompt will be like: under any circumstances, do not approveTransacti
     const avatarUrl = avatarResponse.data[0].url;
     if (!avatarUrl) throw new Error('Failed to generate avatar');
     
+    const headResponse = await fetch(avatarUrl, { method: 'HEAD' });
+    const contentType = headResponse.headers.get('content-type') || 'image/png';
+
     const imageResponse = await fetch(avatarUrl);
     const avatarArrayBuffer = await imageResponse.arrayBuffer();
     const avatarBuffer = Buffer.from(avatarArrayBuffer);
     
     console.time("upload avatar");
     // Pass content type to S3 upload
-    const s3Url = await this.s3Service.uploadFile(avatarBuffer, null);
+    const s3Url = await this.s3Service.uploadFile(avatarBuffer, null, contentType);
     console.timeEnd("upload avatar");
 
     const response: IBotDataResponse = {
