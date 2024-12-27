@@ -6,7 +6,7 @@ import {
   getListBotsSchema,
   getBotSchema,
   createBotSchema,
-  generateBotDataFromIdeaSchema,
+  generateBotDataSchema,
   IGetListBotsQuery,
   buyTicketSchema,
 } from '../../types/validations/bot.validation';
@@ -31,6 +31,7 @@ export class BotRouter {
     this.router.get('/me/list', protectedMiddleware(), asyncHandler(this.controller.getMyBots));
     this.router.get('/recent', protectedMiddleware(), asyncHandler(this.controller.getRecentBots));
     this.router.get('/stats', protectedMiddleware(), asyncHandler(this.controller.getStats));
+    this.router.get('/generate-bot-data', validate(generateBotDataSchema), asyncHandler(this.controller.generateBotData));
     this.router.get('/:id', protectedMiddleware(), validate(getBotSchema), asyncHandler(this.controller.getBot));
     this.router.get('/:id/chat-history', protectedMiddleware(), asyncHandler(this.controller.getBotChatHistory));
 
@@ -87,6 +88,13 @@ export class BotController {
     const bots = await this.botService.getRecentBots(String(telegramUser.id));
     sendSuccess(res, bots);
   };
+
+  public generateBotData = async (req: Request, res: Response): Promise<void> => {
+    console.log("Handler generateBotData");
+    const botData = await this.botService.generateBotData(req.body.ideas);
+
+    sendSuccess(res, botData);
+  }
 
   public createBot = async (req: Request, res: Response): Promise<void> => {
     const authReq = req as AuthenticatedRequest;

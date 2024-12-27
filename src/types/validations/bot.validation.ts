@@ -56,8 +56,8 @@ export const createBotSchema = z.object({
   }),
 });
 
-export const generateBotDataFromIdeaSchema = z.object({
+export const generateBotDataSchema = z.object({
   body: z.object({
-    idea: z.string(),
-  }),
+    ideas: z.string().optional(),
+  }).optional(),
 });

@@ -11,6 +11,13 @@ export interface IBotResponse extends Bot {
   hasActiveTicket?: boolean;
 }
 
+export interface IBotDataResponse {
+  name: string;
+  backStory: string;
+  systemInstruction: string;
+  photoUrl: string;
+}
+
 export interface ChatMessageResponse {
   id: string | null;
   text: string | null;

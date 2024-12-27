@@ -4,6 +4,8 @@ import { RunnableToolFunction } from 'openai/lib/RunnableFunction';
 import { ChatCompletionRunner } from 'openai/lib/ChatCompletionRunner';
 
 import { ChatCompletionStreamingRunner } from 'openai/lib/ChatCompletionStreamingRunner';
+import { z } from "zod";
+import { zodResponseFormat } from "openai/helpers/zod";
 
 const tools: RunnableToolFunction<any>[] = [
   {

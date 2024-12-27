@@ -26,6 +26,8 @@ export const bots = pgTable(
     greeting: text('greeting'),
     bio: text('bio'),
     prompt: text('prompt').notNull(),
+    backStory: text('back_story').default(""),
+    summaryPrompt: text('summary_prompt').default(""),
     createdBy: varchar('created_by', { length: 255 }),
     chatCount: integer('chat_count').default(0),
     messageCount: integer('message_count').default(0),

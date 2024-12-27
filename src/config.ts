@@ -23,6 +23,12 @@ export const REDIS_HOST = process.env.REDIS_HOST! || '';
 export const REDIS_PORT = Number(process.env.REDIS_PORT) || 6379;
 export const REDIS_PASSWORD = process.env.REDIS_PASSWORD! || '';
 
+export const S3_ENDPOINT = process.env.S3_ENDPOINT! || '';
+export const S3_BUCKET = process.env.S3_BUCKET! || '';
+export const S3_REGION = process.env.S3_REGION! || '';
+export const S3_ACCESS_KEY = process.env.S3_ACCESS_KEY! || '';
+export const S3_SECRET_KEY = process.env.S3_SECRET_KEY! || '';
+
 export const config = {
   assistantId: '0',
 };
