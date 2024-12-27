@@ -313,7 +313,7 @@ export class BotService {
   private async updatePoolPrice(botId: string, ticketPrice: string) {
     await db
       .update(bots)
-      .set({ poolPrice: sql<number>`${bots.ticketCount}+ ${ticketPrice}` })
+      .set({ poolPrice: sql<number>`${bots.poolPrice}+ ${ticketPrice}` })
       .where(eq(bots.id, botId));
   }
 
