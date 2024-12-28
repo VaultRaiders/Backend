@@ -198,7 +198,9 @@ export class BotService {
     const hasActiveTicket = await db.query.tickets.findFirst({
       where: and(eq(tickets.botId, botId), eq(tickets.used, false), eq(tickets.userId, userId)),
     });
-
+    if (bot.winner) {
+      bot.winnerAddress = await this.walletService.getWalletAddress(bot.winner);
+    }
     return {
       ...bot,
       hasActiveTicket: !!hasActiveTicket,
@@ -372,13 +374,13 @@ export class BotService {
       data.map(async (bot) => {
         const createdByUsername = userData.find((user) => user.id === bot.createdBy)?.username;
         let winnerWallet;
-        if (bot.winner) {
-          winnerWallet = await this.walletService.getWalletAddress(bot.winner);
-        }
+        // if (bot.winner) {
+        //   winnerWallet = await this.walletService.getWalletAddress(bot.winner);
+        // }
         return {
           ...bot,
           createdByUsername,
-          winnerWallet,
+          // winnerWallet,
         };
       }),
     );
