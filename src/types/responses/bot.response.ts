@@ -15,6 +15,10 @@ export interface IBotDataResponse {
   name: string;
   backStory: string;
   systemInstruction: string;
+  avatarDescription: string;
+}
+
+export interface IBotAvatarResponse {
   photoUrl: string;
 }
 

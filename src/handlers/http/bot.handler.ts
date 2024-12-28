@@ -7,6 +7,7 @@ import {
   getBotSchema,
   createBotSchema,
   generateBotDataSchema,
+  generateBotAvatarSchema,
   IGetListBotsQuery,
   buyTicketSchema,
 } from '../../types/validations/bot.validation';
@@ -31,7 +32,8 @@ export class BotRouter {
     this.router.get('/me/list', protectedMiddleware(), asyncHandler(this.controller.getMyBots));
     this.router.get('/recent', protectedMiddleware(), asyncHandler(this.controller.getRecentBots));
     this.router.get('/stats', protectedMiddleware(), asyncHandler(this.controller.getStats));
-    this.router.post('/generate-bot-data', validate(generateBotDataSchema), asyncHandler(this.controller.generateBotData));
+    this.router.post('/generate-bot-data', protectedMiddleware(), validate(generateBotDataSchema), asyncHandler(this.controller.generateBotData));
+    this.router.post('/generate-bot-avatar', protectedMiddleware(), validate(generateBotAvatarSchema), asyncHandler(this.controller.generateBotAvatar));
     this.router.get('/:id', protectedMiddleware(), validate(getBotSchema), asyncHandler(this.controller.getBot));
     this.router.get('/:id/chat-history', protectedMiddleware(), asyncHandler(this.controller.getBotChatHistory));
 
@@ -94,6 +96,12 @@ export class BotController {
 
     sendSuccess(res, botData);
   };
+
+  public generateBotAvatar = async (req: Request, res: Response): Promise<void> => {
+    const avatar = await this.botService.generateBotAvatar(req.body.avatarDescription);
+
+    sendSuccess(res, avatar);
+  }
 
   public createBot = async (req: Request, res: Response): Promise<void> => {
     const authReq = req as AuthenticatedRequest;

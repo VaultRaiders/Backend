@@ -61,3 +61,9 @@ export const generateBotDataSchema = z.object({
     ideas: z.string().optional(),
   }).optional(),
 });
+
+export const generateBotAvatarSchema = z.object({
+  body: z.object({
+    avatarDescription: z.string().optional(),
+  }).optional(),
+});

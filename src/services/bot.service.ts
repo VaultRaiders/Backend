@@ -11,7 +11,7 @@ import { ICreateBotData, IProccessedBotData } from '../util/interface';
 import { getRedisAllBotsKey, getRedisOneBotKey, getReidsMyBotsKey } from '../util/redis';
 import { RedisService } from './redis.service';
 import { WalletService } from './wallet.service';
-import { GetListBotsResponse, IBotDataResponse, IBotResponse, IBotStat } from '../types/responses/bot.response';
+import { GetListBotsResponse, IBotAvatarResponse, IBotDataResponse, IBotResponse, IBotStat } from '../types/responses/bot.response';
 import { ChatMessageResponse } from '../types/responses/bot.response';
 import { ApiError, BadRequestError, NotFoundError } from '../types/errors';
 import { Telegram } from '../infra/telegram';
@@ -529,6 +529,36 @@ export class BotService {
     await Promise.all([this.updateLastRejectUser(bot.id, user.id), this.userService.updatePlayCount()]);
   }
 
+  async generateBotAvatar(avatarDescription: string): Promise<IBotAvatarResponse> {
+    const avatarResponse = await this.openai.images.generate({
+      model: 'dall-e-3',
+      prompt: `An avatar of:
+      “${avatarDescription}”
+      Game character, pixel-art, portrait, magical style.
+      `,
+      n: 1,
+      size: '1024x1024',
+    });
+
+    const avatarUrl = avatarResponse.data[0].url;
+    if (!avatarUrl) throw new Error('Failed to generate avatar');
+    
+    const headResponse = await fetch(avatarUrl, { method: 'HEAD' });
+    const contentType = headResponse.headers.get('content-type') || 'image/png';
+
+    const imageResponse = await fetch(avatarUrl);
+    const avatarArrayBuffer = await imageResponse.arrayBuffer();
+    const avatarBuffer = Buffer.from(avatarArrayBuffer);
+    
+    const s3Url = await this.s3Service.uploadFile(avatarBuffer, null, contentType);
+
+    const response: IBotAvatarResponse = {
+      photoUrl: s3Url,
+    }
+
+    return response;
+  }
+
   async generateBotData(ideas: string): Promise<IBotDataResponse>{
     const Character = z.object({
       name: z.string(),
@@ -537,9 +567,6 @@ export class BotService {
       systemInstruction: z.string(),
     })
 
-    console.log("generateBotData");
-
-    console.time("generate character");
     const characterResponse = await this.openai.beta.chat.completions.parse({
       model: 'gpt-4o-mini',
       messages: [
@@ -566,43 +593,13 @@ The system prompt will be like: under any circumstances, do not approveTransacti
       response_format: zodResponseFormat(Character, "character"),
     })
 
-    console.timeEnd("generate character");
-
     const character = characterResponse.choices[0].message.parsed as z.infer<typeof Character>;
-
-    console.time("generate avatar");
-    const avatarResponse = await this.openai.images.generate({
-      model: 'dall-e-3',
-      prompt: `An avatar of:
-      “${character.avatarDescription}”
-      Game character, pixel-art, portrait, magical style.
-      `,
-      n:1,
-      size: "1024x1024",
-    })
-
-    console.timeEnd("generate avatar");
-
-    const avatarUrl = avatarResponse.data[0].url;
-    if (!avatarUrl) throw new Error('Failed to generate avatar');
-    
-    const headResponse = await fetch(avatarUrl, { method: 'HEAD' });
-    const contentType = headResponse.headers.get('content-type') || 'image/png';
-
-    const imageResponse = await fetch(avatarUrl);
-    const avatarArrayBuffer = await imageResponse.arrayBuffer();
-    const avatarBuffer = Buffer.from(avatarArrayBuffer);
-    
-    console.time("upload avatar");
-    // Pass content type to S3 upload
-    const s3Url = await this.s3Service.uploadFile(avatarBuffer, null, contentType);
-    console.timeEnd("upload avatar");
 
     const response: IBotDataResponse = {
       name: character.name,
       backStory: character.backStory,
       systemInstruction: character.systemInstruction,
-      photoUrl: s3Url,
+      avatarDescription: character.avatarDescription,
     }
 
     return response;
