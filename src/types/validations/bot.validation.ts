@@ -57,13 +57,17 @@ export const createBotSchema = z.object({
 });
 
 export const generateBotDataSchema = z.object({
-  body: z.object({
-    ideas: z.string().optional(),
-  }).optional(),
+  body: z
+    .object({
+      ideas: z.string().optional(),
+    })
+    .optional(),
 });
 
 export const generateBotAvatarSchema = z.object({
-  body: z.object({
-    avatarDescription: z.string().optional(),
-  }).optional(),
+  params: z
+    .object({
+      avatarDescription: z.string().optional(),
+    })
+    .optional(),
 });
