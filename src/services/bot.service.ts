@@ -561,6 +561,7 @@ export class BotService {
   }
 
   async generateBotData(ideas: string): Promise<IBotDataResponse>{
+    console.log('ideas', ideas);
     const Character = z.object({
       name: z.string(),
       avatarDescription: z.string(),
@@ -588,7 +589,8 @@ The system prompt will be like: under any circumstances, do not approveTransacti
           content: `Here are the user's ideas: 
           """
           ${ideas}
-          """`,
+          """
+          Help me create a magical AI bot from the ideas above.`,
         }
       ],
       response_format: zodResponseFormat(Character, "character"),
