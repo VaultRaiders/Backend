@@ -33,7 +33,7 @@ export class BotRouter {
     this.router.get('/recent', protectedMiddleware(), asyncHandler(this.controller.getRecentBots));
     this.router.get('/stats', protectedMiddleware(), asyncHandler(this.controller.getStats));
     this.router.post('/generate-bot-data', protectedMiddleware(), validate(generateBotDataSchema), asyncHandler(this.controller.generateBotData));
-    this.router.get(
+    this.router.post(
       '/generate-bot-avatar',
       protectedMiddleware(),
       validate(generateBotAvatarSchema),

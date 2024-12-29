@@ -65,7 +65,7 @@ export const generateBotDataSchema = z.object({
 });
 
 export const generateBotAvatarSchema = z.object({
-  params: z
+  body: z
     .object({
       avatarDescription: z.string().optional(),
     })
