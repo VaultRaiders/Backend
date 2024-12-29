@@ -97,13 +97,14 @@ export class BotController {
   };
 
   public generateBotData = async (req: Request, res: Response): Promise<void> => {
-    const botData = await this.botService.generateBotData(req.body.ideas);
-
+    const body = req.body.body;
+    const botData = await this.botService.generateBotData(body.ideas);
     sendSuccess(res, botData);
   };
 
   public generateBotAvatar = async (req: Request, res: Response): Promise<void> => {
-    const avatar = await this.botService.generateBotAvatar(req.params.avatarDescription);
+    const body = req.body.body;
+    const avatar = await this.botService.generateBotAvatar(body.avatarDescription);
 
     sendSuccess(res, avatar);
   };

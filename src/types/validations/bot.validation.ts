@@ -59,15 +59,13 @@ export const createBotSchema = z.object({
 export const generateBotDataSchema = z.object({
   body: z
     .object({
-      ideas: z.string().optional(),
-    })
-    .optional(),
+      ideas: z.string().default(''),
+    }),
 });
 
 export const generateBotAvatarSchema = z.object({
   body: z
     .object({
-      avatarDescription: z.string().optional(),
-    })
-    .optional(),
+      avatarDescription: z.string().default(''),
+    }),
 });
