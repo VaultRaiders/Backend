@@ -530,6 +530,7 @@ export class BotService {
   }
 
   async generateBotAvatar(avatarDescription: string): Promise<IBotAvatarResponse> {
+    avatarDescription = avatarDescription.slice(0, 3800);
     const avatarResponse = await this.openai.images.generate({
       model: 'dall-e-3',
       prompt: `An avatar of:
