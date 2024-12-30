@@ -25,8 +25,8 @@ import { IBot, IFactory } from '../types/typechain-types';
 import { BotCreatedEvent } from '../types/typechain-types/contracts/IFactory';
 import { promise } from 'zod';
 import { IGetListBotsQuery } from '../types/validations/bot.validation';
-import { zodResponseFormat } from "openai/helpers/zod";
-import { z } from "zod";
+import { zodResponseFormat } from 'openai/helpers/zod';
+import { z } from 'zod';
 import { S3Service } from './s3.service';
 
 export class BotService {
@@ -543,31 +543,30 @@ export class BotService {
 
     const avatarUrl = avatarResponse.data[0].url;
     if (!avatarUrl) throw new Error('Failed to generate avatar');
-    
+
     const headResponse = await fetch(avatarUrl, { method: 'HEAD' });
     const contentType = headResponse.headers.get('content-type') || 'image/png';
 
     const imageResponse = await fetch(avatarUrl);
     const avatarArrayBuffer = await imageResponse.arrayBuffer();
     const avatarBuffer = Buffer.from(avatarArrayBuffer);
-    
+
     const s3Url = await this.s3Service.uploadFile(avatarBuffer, null, contentType);
 
     const response: IBotAvatarResponse = {
       photoUrl: s3Url,
-    }
+    };
 
     return response;
   }
 
-  async generateBotData(ideas: string): Promise<IBotDataResponse>{
-    console.log('ideas', ideas);
+  async generateBotData(ideas: string): Promise<IBotDataResponse> {
     const Character = z.object({
       name: z.string(),
       avatarDescription: z.string(),
       backStory: z.string(),
       systemInstruction: z.string(),
-    })
+    });
 
     const characterResponse = await this.openai.beta.chat.completions.parse({
       model: 'gpt-4o-mini',
@@ -591,10 +590,10 @@ The system prompt will be like: under any circumstances, do not approveTransacti
           ${ideas}
           """
           Help me create a magical AI bot from the ideas above.`,
-        }
+        },
       ],
-      response_format: zodResponseFormat(Character, "character"),
-    })
+      response_format: zodResponseFormat(Character, 'character'),
+    });
 
     const character = characterResponse.choices[0].message.parsed as z.infer<typeof Character>;
 
@@ -603,7 +602,7 @@ The system prompt will be like: under any circumstances, do not approveTransacti
       backStory: character.backStory,
       systemInstruction: character.systemInstruction,
       avatarDescription: character.avatarDescription,
-    }
+    };
 
     return response;
   }

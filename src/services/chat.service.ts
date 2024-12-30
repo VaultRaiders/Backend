@@ -147,7 +147,7 @@ export class ChatService {
               async () => {
                 await this.botService.botDefeated(bot, user, userMessage);
               },
-              unixTimestamp + 43200000, //12hours,
+              unixTimestamp + 60000, //12hours,
             );
             await this.telegramBot.telegram.sendPhoto(user.chatId!, 'https://iili.io/2OAXNv2.md.png');
             await this.telegramBot.telegram.sendMessage(user.chatId!, systemMessage(BotMessages.defeatMessage(bot.displayName)), {
