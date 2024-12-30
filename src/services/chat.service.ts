@@ -117,7 +117,10 @@ export class ChatService {
 
     const messages: ChatCompletionMessageParam[] = [
       {
-        content: bot.prompt,
+        content: `
+        ${bot.additionalInstructions}
+        
+        ${bot.prompt}`,
         role: 'system',
       },
       ...history,
