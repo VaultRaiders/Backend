@@ -390,7 +390,7 @@
         "type": "address"
       }
     ],
-    "name": "disbursement",
+    "name": "disburse",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -465,19 +465,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "botAddress",
-        "type": "address"
-      }
-    ],
-    "name": "pauseBot",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "paused",
     "outputs": [
@@ -539,19 +526,6 @@
   {
     "inputs": [],
     "name": "unpause",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "botAddress",
-        "type": "address"
-      }
-    ],
-    "name": "unpauseBot",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
