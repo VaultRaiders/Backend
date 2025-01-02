@@ -152,7 +152,7 @@ export class ChatService {
               },
               unixTimestamp + 43200000, //12hours,
             );
-            await this.telegramBot.telegram.sendPhoto(user.chatId!, 'https://iili.io/2OAXNv2.md.png');
+            await this.telegramBot.telegram.sendPhoto(user.chatId!, 'https://iili.io/2SlZ6MJ.png');
             await this.telegramBot.telegram.sendMessage(user.chatId!, systemMessage(BotMessages.defeatMessage(bot.displayName)), {
               parse_mode: 'HTML',
               ...createSubscriptionRequiredKeyboard(),
@@ -164,7 +164,7 @@ export class ChatService {
             const pendingMsg = await this.telegramBot.telegram.sendMessage(user.chatId!, systemMessage(BotMessages.disbursingAwardMessage()), {
               parse_mode: 'HTML',
             });
-            await this.telegramBot.telegram.sendPhoto(user.chatId!, 'https://iili.io/2OAXckN.png');
+            await this.telegramBot.telegram.sendPhoto(user.chatId!, 'https://iili.io/2SlZP6v.png');
             await this.telegramBot.telegram.sendMessage(user.chatId!, systemMessage(BotMessages.victoryMessage(bot.displayName)), {
               parse_mode: 'HTML',
               ...createBackToMainKeyboard(),
