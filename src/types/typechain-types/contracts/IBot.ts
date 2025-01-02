@@ -28,14 +28,14 @@ export interface IBotInterface extends Interface {
     nameOrSignature:
       | "buyTicket"
       | "creator"
-      | "disbursement"
+      | "disburse"
       | "getPrice"
       | "iFactory"
       | "initialize"
       | "order"
-      | "pause"
+      | "overdueRefund"
       | "paused"
-      | "unpause"
+      | "purchases"
   ): FunctionFragment;
 
   getEvent(
@@ -50,7 +50,7 @@ export interface IBotInterface extends Interface {
   encodeFunctionData(functionFragment: "buyTicket", values?: undefined): string;
   encodeFunctionData(functionFragment: "creator", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "disbursement",
+    functionFragment: "disburse",
     values: [AddressLike]
   ): string;
   encodeFunctionData(functionFragment: "getPrice", values?: undefined): string;
@@ -60,23 +60,29 @@ export interface IBotInterface extends Interface {
     values: [AddressLike, AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "order", values?: undefined): string;
-  encodeFunctionData(functionFragment: "pause", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "overdueRefund",
+    values?: undefined
+  ): string;
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
-  encodeFunctionData(functionFragment: "unpause", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "purchases",
+    values: [AddressLike]
+  ): string;
 
   decodeFunctionResult(functionFragment: "buyTicket", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "creator", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "disbursement",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "disburse", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getPrice", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "iFactory", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "order", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "pause", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "overdueRefund",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "unpause", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "purchases", data: BytesLike): Result;
 }
 
 export namespace DisbursementEvent {
@@ -193,7 +199,7 @@ export interface IBot extends BaseContract {
 
   creator: TypedContractMethod<[], [string], "view">;
 
-  disbursement: TypedContractMethod<[to: AddressLike], [void], "nonpayable">;
+  disburse: TypedContractMethod<[to: AddressLike], [void], "nonpayable">;
 
   getPrice: TypedContractMethod<[], [bigint], "view">;
 
@@ -207,11 +213,11 @@ export interface IBot extends BaseContract {
 
   order: TypedContractMethod<[], [bigint], "view">;
 
-  pause: TypedContractMethod<[], [void], "nonpayable">;
+  overdueRefund: TypedContractMethod<[], [void], "nonpayable">;
 
   paused: TypedContractMethod<[], [boolean], "view">;
 
-  unpause: TypedContractMethod<[], [void], "nonpayable">;
+  purchases: TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
 
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
@@ -224,7 +230,7 @@ export interface IBot extends BaseContract {
     nameOrSignature: "creator"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
-    nameOrSignature: "disbursement"
+    nameOrSignature: "disburse"
   ): TypedContractMethod<[to: AddressLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "getPrice"
@@ -243,14 +249,14 @@ export interface IBot extends BaseContract {
     nameOrSignature: "order"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
-    nameOrSignature: "pause"
+    nameOrSignature: "overdueRefund"
   ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "paused"
   ): TypedContractMethod<[], [boolean], "view">;
   getFunction(
-    nameOrSignature: "unpause"
-  ): TypedContractMethod<[], [void], "nonpayable">;
+    nameOrSignature: "purchases"
+  ): TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
 
   getEvent(
     key: "Disbursement"

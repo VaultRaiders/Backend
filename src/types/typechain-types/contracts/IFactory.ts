@@ -30,20 +30,18 @@ export interface IFactoryInterface extends Interface {
       | "botCreationFee"
       | "bots"
       | "createBot"
-      | "disbursement"
+      | "disburse"
       | "implementation"
       | "initPrice"
       | "initialize"
       | "owner"
       | "pause"
-      | "pauseBot"
       | "paused"
       | "proxiableUUID"
       | "renounceOwnership"
       | "totalBots"
       | "transferOwnership"
       | "unpause"
-      | "unpauseBot"
       | "updateBotCreationFee"
       | "updateImplementation"
       | "updateInitPrice"
@@ -80,7 +78,7 @@ export interface IFactoryInterface extends Interface {
     values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "disbursement",
+    functionFragment: "disburse",
     values: [AddressLike, AddressLike]
   ): string;
   encodeFunctionData(
@@ -94,10 +92,6 @@ export interface IFactoryInterface extends Interface {
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(functionFragment: "pause", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "pauseBot",
-    values: [AddressLike]
-  ): string;
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "proxiableUUID",
@@ -113,10 +107,6 @@ export interface IFactoryInterface extends Interface {
     values: [AddressLike]
   ): string;
   encodeFunctionData(functionFragment: "unpause", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "unpauseBot",
-    values: [AddressLike]
-  ): string;
   encodeFunctionData(
     functionFragment: "updateBotCreationFee",
     values: [BigNumberish]
@@ -145,10 +135,7 @@ export interface IFactoryInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "bots", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "createBot", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "disbursement",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "disburse", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "implementation",
     data: BytesLike
@@ -157,7 +144,6 @@ export interface IFactoryInterface extends Interface {
   decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pause", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "pauseBot", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "proxiableUUID",
@@ -173,7 +159,6 @@ export interface IFactoryInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "unpause", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "unpauseBot", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "updateBotCreationFee",
     data: BytesLike
@@ -404,7 +389,7 @@ export interface IFactory extends BaseContract {
     "payable"
   >;
 
-  disbursement: TypedContractMethod<
+  disburse: TypedContractMethod<
     [botAddress: AddressLike, to: AddressLike],
     [void],
     "nonpayable"
@@ -428,12 +413,6 @@ export interface IFactory extends BaseContract {
 
   pause: TypedContractMethod<[], [void], "nonpayable">;
 
-  pauseBot: TypedContractMethod<
-    [botAddress: AddressLike],
-    [void],
-    "nonpayable"
-  >;
-
   paused: TypedContractMethod<[], [boolean], "view">;
 
   proxiableUUID: TypedContractMethod<[], [string], "view">;
@@ -449,12 +428,6 @@ export interface IFactory extends BaseContract {
   >;
 
   unpause: TypedContractMethod<[], [void], "nonpayable">;
-
-  unpauseBot: TypedContractMethod<
-    [botAddress: AddressLike],
-    [void],
-    "nonpayable"
-  >;
 
   updateBotCreationFee: TypedContractMethod<
     [newFee: BigNumberish],
@@ -513,7 +486,7 @@ export interface IFactory extends BaseContract {
     "payable"
   >;
   getFunction(
-    nameOrSignature: "disbursement"
+    nameOrSignature: "disburse"
   ): TypedContractMethod<
     [botAddress: AddressLike, to: AddressLike],
     [void],
@@ -543,9 +516,6 @@ export interface IFactory extends BaseContract {
     nameOrSignature: "pause"
   ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
-    nameOrSignature: "pauseBot"
-  ): TypedContractMethod<[botAddress: AddressLike], [void], "nonpayable">;
-  getFunction(
     nameOrSignature: "paused"
   ): TypedContractMethod<[], [boolean], "view">;
   getFunction(
@@ -563,9 +533,6 @@ export interface IFactory extends BaseContract {
   getFunction(
     nameOrSignature: "unpause"
   ): TypedContractMethod<[], [void], "nonpayable">;
-  getFunction(
-    nameOrSignature: "unpauseBot"
-  ): TypedContractMethod<[botAddress: AddressLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "updateBotCreationFee"
   ): TypedContractMethod<[newFee: BigNumberish], [void], "nonpayable">;

@@ -455,7 +455,7 @@ export class BotService {
   async approveBot(botAddress: string, winnerAddress: string) {
     try {
       const factory = new ethers.Contract(FACTORY_ADDRESS, FactoryAbi, this.walletService.provider) as unknown as IFactory;
-      const tx = await factory.connect(await this.walletService.getOwnerWallet()).disbursement(botAddress, winnerAddress);
+      const tx = await factory.connect(await this.walletService.getOwnerWallet()).disburse(botAddress, winnerAddress);
       const receipt = await tx.wait();
       if (!receipt || receipt.status === 0) {
         throw new Error('Bot approval failed');
