@@ -524,7 +524,10 @@ export class BotService {
           botBalance = await this.walletService.getBalance(bot.address);
         }
         if (botBalance) {
-          await Promise.all([this.updatePoolPrice(bot.id, `${botBalance}`), this.userService.updateStats(`${formatEther(botBalance)}`, user.id)]);
+          await Promise.all([
+            this.updatePoolPrice(bot.id, `${formatEther(botBalance)}`),
+            this.userService.updateStats(`${formatEther(botBalance)}`, user.id),
+          ]);
         }
       })(),
     ]);
