@@ -435,7 +435,19 @@ export class BotService {
         where: inArray(bots.id, botIds),
       });
 
-      return validBots as IBotResponse[];
+      const result = await Promise.all(
+        validBots.map(async (bot) => {
+          const botAddress = bot.address;
+          if (!botAddress) return bot;
+          const balance = await this.walletService.getBalance(botAddress);
+          if (balance) {
+            return { ...bot, balance };
+          }
+          return bot;
+        }),
+      );
+
+      return result as IBotResponse[];
     } catch (error) {
       console.error('Error fetching valid bots:', error);
       return [];
