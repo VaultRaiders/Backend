@@ -512,7 +512,7 @@ export class BotService {
           botBalance = await this.walletService.getBalance(bot.address);
         }
         if (botBalance) {
-          await Promise.all([this.updatePoolPrice(bot.id, `${botBalance}`), this.userService.updateStats(`${botBalance}`)]);
+          await Promise.all([this.updatePoolPrice(bot.id, `${botBalance}`), this.userService.updateStats(`${formatEther(botBalance)}`, user.id)]);
         }
       })(),
     ]);
@@ -521,7 +521,7 @@ export class BotService {
     return reciept;
   }
   async userDefeated(bot: Bot, user: User) {
-    await Promise.all([this.updateLastRejectUser(bot.id, user.id), this.userService.updatePlayCount()]);
+    await Promise.all([this.updateLastRejectUser(bot.id, user.id), this.userService.updatePlayCount(user.id)]);
   }
 
   async generateBotAvatar(avatarDescription: string): Promise<IBotAvatarResponse> {

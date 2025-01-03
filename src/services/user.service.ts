@@ -132,17 +132,23 @@ export class UserService {
     };
   }
 
-  async updateStats(winingAmount: string) {
-    return db.update(users).set({
-      winCount: sql`${users.winCount} + 1`,
-      playCount: sql`${users.playCount} + 1`,
-      winingAmount: sql`${users.winingAmount} + ${winingAmount}`,
-    });
+  async updateStats(winingAmount: string, userId: string) {
+    return db
+      .update(users)
+      .set({
+        winCount: sql`${users.winCount} + 1`,
+        playCount: sql`${users.playCount} + 1`,
+        winingAmount: sql`${users.winingAmount} + ${winingAmount}`,
+      })
+      .where(eq(users.id, userId));
   }
 
-  async updatePlayCount() {
-    return db.update(users).set({
-      playCount: sql`${users.playCount} + 1`,
-    });
+  async updatePlayCount(userId: string) {
+    return db
+      .update(users)
+      .set({
+        playCount: sql`${users.playCount} + 1`,
+      })
+      .where(eq(users.id, userId));
   }
 }
