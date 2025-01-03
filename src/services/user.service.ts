@@ -109,7 +109,7 @@ export class UserService {
       (prev, curr) => {
         prev.totalParticipant += 1;
         if (curr?.winingAmount) {
-          prev.totalPrizeEarned = `${+prev.totalPrizeEarned + curr?.winingAmount}`;
+          prev.totalPrizeEarned = `${+prev.totalPrizeEarned + +curr?.winingAmount}`;
         }
         if (curr.playCount) {
           prev.totalPlays += curr.playCount;
