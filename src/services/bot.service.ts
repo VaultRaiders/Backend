@@ -317,11 +317,8 @@ export class BotService {
       .where(eq(bots.id, botId));
   }
 
-  private async updatePoolPrice(botId: string, ticketPrice: string) {
-    await db
-      .update(bots)
-      .set({ poolPrice: sql<number>`${bots.poolPrice}+ ${ticketPrice}` })
-      .where(eq(bots.id, botId));
+  private async updatePoolPrice(botId: string, botBalance: string) {
+    await db.update(bots).set({ poolPrice: botBalance }).where(eq(bots.id, botId));
   }
 
   async getAvailableTicket(botId: string, userId: string) {
@@ -515,8 +512,7 @@ export class BotService {
           botBalance = await this.walletService.getBalance(bot.address);
         }
         if (botBalance) {
-          this.updatePoolPrice(bot.id, `${botBalance}`);
-          await this.userService.updateStats(`${botBalance}`);
+          await Promise.all([this.updatePoolPrice(bot.id, `${botBalance}`), this.userService.updateStats(`${botBalance}`)]);
         }
       },
     ]);

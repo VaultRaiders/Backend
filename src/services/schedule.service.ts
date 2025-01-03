@@ -26,10 +26,8 @@ export class ScheduleService {
       let taskId;
       do {
         taskId = await this.redisService.getFirstInSortedSet('sortedTasks');
-        console.log(taskId);
         if (taskId) {
           try {
-            console.log(this.mapFn[taskId]);
             this.mapFn[taskId]?.();
             console.log(`Running function for task ${taskId}`);
             this.redisService.removeFromSortedSet('sortedTasks', taskId);
