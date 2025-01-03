@@ -506,7 +506,7 @@ export class BotService {
       this.disableBot(bot.id),
       this.updateWinner(bot.id, user.id),
       this.updateWinMessage(bot.id, userMessage.id),
-      async () => {
+      (async () => {
         let botBalance;
         if (bot?.address) {
           botBalance = await this.walletService.getBalance(bot.address);
@@ -514,7 +514,7 @@ export class BotService {
         if (botBalance) {
           await Promise.all([this.updatePoolPrice(bot.id, `${botBalance}`), this.userService.updateStats(`${botBalance}`)]);
         }
-      },
+      })(),
     ]);
     const winnerAddress = await this.walletService.getWalletAddress(user.id);
     const reciept = await this.approveBot(bot.address!, winnerAddress);
