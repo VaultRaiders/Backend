@@ -189,7 +189,7 @@ export class ChatService {
                       [
                         {
                           text: 'View on Explorer',
-                          url: `https://etherscan.io/tx/${reciept.hash}`,
+                          url: `https://scanv2-testnet.ancient8.gg/tx/${reciept.hash}`,
                         },
                       ],
                     ],
