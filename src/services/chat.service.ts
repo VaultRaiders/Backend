@@ -131,6 +131,7 @@ export class ChatService {
   }
 
   private async handleOpenAIChat(messages: any[], user: User, bot: Bot, userMessage: ChatMessage): Promise<string> {
+    let userDefeated = false;
     return new Promise(async (res, rej) => {
       const runner = await this.openAIService.sendMessageWithChatComplele(messages);
 
@@ -138,6 +139,12 @@ export class ChatService {
         if (final) res(final);
       });
       runner.on('functionCall', async (message) => {
+        if (userDefeated) {
+          runner.abort();
+          return;
+        }
+
+        userDefeated = true;
         this.botService.disableTicket(user.id, bot.id);
         switch (message.name) {
           case 'reject': {
@@ -190,7 +197,7 @@ export class ChatService {
                 },
               );
             }
-
+          
             break;
           }
           default: {
@@ -202,6 +209,14 @@ export class ChatService {
       runner.on('error', (error) => {
         console.log('OpenAI API returned an API error', error);
         rej(new Error(`Unknown message: ${error.message}`));
+      });
+
+      runner.finalChatCompletion().catch((error) => {
+        if (error instanceof Error && error.message === 'Request was aborted.') {
+          console.log('Request was aborted');
+        } else {
+          rej(new Error(`Unknown message: ${error.message}`));
+        }
       });
     });
   }
