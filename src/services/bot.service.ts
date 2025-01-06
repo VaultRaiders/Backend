@@ -317,11 +317,8 @@ export class BotService {
       .where(eq(bots.id, botId));
   }
 
-  private async updatePoolPrice(botId: string, ticketPrice: string) {
-    await db
-      .update(bots)
-      .set({ poolPrice: sql<number>`${bots.poolPrice}+ ${ticketPrice}` })
-      .where(eq(bots.id, botId));
+  private async updatePoolPrice(botId: string, botBalance: string) {
+    await db.update(bots).set({ poolPrice: botBalance }).where(eq(bots.id, botId));
   }
 
   async getAvailableTicket(botId: string, userId: string) {
@@ -438,7 +435,19 @@ export class BotService {
         where: inArray(bots.id, botIds),
       });
 
-      return validBots as IBotResponse[];
+      const result = await Promise.all(
+        validBots.map(async (bot) => {
+          const botAddress = bot.address;
+          if (!botAddress) return bot;
+          const balance = await this.walletService.getBalance(botAddress);
+          if (balance) {
+            return { ...bot, balance };
+          }
+          return bot;
+        }),
+      );
+
+      return result as IBotResponse[];
     } catch (error) {
       console.error('Error fetching valid bots:', error);
       return [];
@@ -509,23 +518,25 @@ export class BotService {
       this.disableBot(bot.id),
       this.updateWinner(bot.id, user.id),
       this.updateWinMessage(bot.id, userMessage.id),
-      async () => {
+      (async () => {
         let botBalance;
         if (bot?.address) {
           botBalance = await this.walletService.getBalance(bot.address);
         }
         if (botBalance) {
-          this.updatePoolPrice(bot.id, `${botBalance}`);
-          await this.userService.updateStats(`${botBalance}`);
+          await Promise.all([
+            this.updatePoolPrice(bot.id, `${formatEther(botBalance)}`),
+            this.userService.updateStats(`${formatEther(botBalance)}`, user.id),
+          ]);
         }
-      },
+      })(),
     ]);
     const winnerAddress = await this.walletService.getWalletAddress(user.id);
     const reciept = await this.approveBot(bot.address!, winnerAddress);
     return reciept;
   }
   async userDefeated(bot: Bot, user: User) {
-    await Promise.all([this.updateLastRejectUser(bot.id, user.id), this.userService.updatePlayCount()]);
+    await Promise.all([this.updateLastRejectUser(bot.id, user.id), this.userService.updatePlayCount(user.id)]);
   }
 
   async generateBotAvatar(avatarDescription: string): Promise<IBotAvatarResponse> {
