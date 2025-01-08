@@ -66,6 +66,9 @@ export class ChatService {
       const userMessage = await this.saveUserMessage(currentChat.id, user, bot, messageText);
 
       const msg = await this.processMessage(threadId, chat, user, bot, userMessage, ctx);
+      if (!msg) {
+        return { msg: [], error: null };
+      }
 
       await this.updateMessageCount(user, bot, chat, msg);
 
@@ -126,6 +129,8 @@ export class ChatService {
       ...history,
     ];
     const responseMessage = await this.handleOpenAIChat(messages, user, bot, userMessage);
+    if (!responseMessage) return [];
+
     const message = await this.saveBotMessage(threadId, user, bot, responseMessage);
     return [message];
   }
@@ -214,6 +219,7 @@ export class ChatService {
       runner.finalChatCompletion().catch((error) => {
         if (error instanceof Error && error.message === 'Request was aborted.') {
           console.log('Request was aborted');
+          res('');
         } else {
           rej(new Error(`Unknown message: ${error.message}`));
         }
